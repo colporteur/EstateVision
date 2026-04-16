@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#1a1a1a">
+<title>Item ID</title>
+<link rel="manifest" href='data:application/manifest+json,{"name":"Item ID","short_name":"Item ID","start_url":".","display":"standalone","background_color":"%231a1a1a","theme_color":"%231a1a1a","icons":[]}'>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { background: #1a1a1a; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    color: #e8e8e8;
+    min-height: 100vh;
+    padding: 16px;
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
+    font-size: 16px;
+    line-height: 1.4;
+  }
+  header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; }
+  h1 { font-size: 1.3em; font-weight: 600; }
+  .muted { color: #888; font-size: 0.9em; }
+  .section { margin-top: 16px; }
+  button, .btn {
+    display: block;
+    width: 100%;
+    padding: 14px 16px;
+    font-size: 1em;
+    font-family: inherit;
+    background: #2a2a2a;
+    color: #e8e8e8;
+    border: 1px solid #444;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-bottom: 8px;
+    text-align: center;
+    text-decoration: none;
+  }
+  button:active, .btn:active { background: #3a3a3a; }
+  button.primary { background: #3b82f6; border-color: #3b82f6; color: white; font-weight: 600; }
+  button.primary:active { background: #2563eb; }
+  button:disabled { opacity: 0.5; }
+  .btn.sold       { background: #1f3a1f; border-color: #305030; }
+  .btn.active-ln  { background: #1f2f4a; border-color: #304570; }
+  .btn.terapeak   { background: #2e1f4a; border-color: #452f70; }
+  .btn.worthpoint { background: #4a2f1f; border-color: #70452f; }
+  input[type="text"], input[type="password"], textarea, select {
+    width: 100%;
+    padding: 12px;
+    font-size: 1em;
+    font-family: inherit;
+    background: #0f0f0f;
+    color: #e8e8e8;
+    border: 1px solid #444;
+    border-radius: 8px;
+    margin-bottom: 8px;
+  }
+  textarea { min-height: 72px; resize: vertical; }
+  input[type="file"] { display: none; }
+  .preview { width: 100%; max-height: 320px; object-fit: contain; border-radius: 8px; background: #0f0f0f; margin: 8px 0; }
+  .row { display: flex; gap: 8px; }
+  .row > * { flex: 1; margin-bottom: 0; }
+  .kv { padding: 10px 0; border-bottom: 1px solid #2a2a2a; }
+  .kv:last-child { border-bottom: none; }
+  .kv .k { color: #888; font-size: 0.75em; text-transform: uppercase; letter-spacing: 0.06em; }
+  .kv .v { font-size: 1em; margin-top: 3px; word-break: break-word; }
+  .hidden { display: none !important; }
+  .error { background: #4a1a1a; border: 1px solid #7a3a3a; color: #ffcccc; padding: 12px; border-radius: 8px; margin: 8px 0; font-size: 0.9em; white-space: pre-wrap; }
+  .loading { text-align: center; padding: 24px; color: #888; }
+  .spinner {
+    display: inline-block; width: 18px; height: 18px;
+    border: 2px solid #444; border-top-color: #3b82f6; border-radius: 50%;
+    animation: spin 0.8s linear infinite; vertical-align: middle; margin-right: 8px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .confidence { display: inline-block; padding: 3px 10px; border-radius: 4px; font-size: 0.75em; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+  .confidence.high   { background: #1f3a1f; color: #9fd89f; }
+  .confidence.medium { background: #3a3a1f; color: #d8d89f; }
+  .confidence.low    { background: #3a1f1f; color: #d89f9f; }
+  .gear {
+    background: none; border: none; font-size: 1.4em; padding: 4px 10px;
+    width: auto; margin: 0; color: #888; cursor: pointer;
+  }
+  .gear:active { background: #2a2a2a; }
+  label { display: block; font-size: 0.75em; color: #888; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .footnote { font-size: 0.8em; color: #666; margin-top: 8px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Item ID</h1>
+  <button class="gear" id="settingsBtn" title="Settings" aria-label="Settings">&#9881;</button>
+</header>
+<div class="muted">Identify item &rarr; research prices</div>
+
+<!-- Settings panel -->
+<div id="settings" class="section hidden">
+  <label for="apikey">Anthropic API Key</label>
+  <input type="password" id="apikey" placeholder="sk-ant-..." autocomplete="off" spellcheck="false">
+  <label for="model">Model</label>
+  <select id="model">
+    <option value="claude-sonnet-4-6">Sonnet 4.6 (recommended)</option>
+    <option value="claude-opus-4-6">Opus 4.6 (most accurate, costlier)</option>
+    <option value="claude-haiku-4-5-20251001">Haiku 4.5 (fastest, cheapest)</option>
+  </select>
+  <div class="row">
+    <button class="primary" id="saveSettingsBtn">Save</button>
+    <button id="closeSettingsBtn">Close</button>
+  </div>
+  <div class="footnote">Key is stored only in this browser on this device.</div>
+</div>
+
+<!-- Capture panel -->
+<div id="capture" class="section">
+  <div class="row">
+    <label class="btn" for="cameraInput">&#128247; Take Photo</label>
+    <label class="btn" for="libraryInput">&#128444; Choose Photo</label>
+  </div>
+  <input type="file" id="cameraInput" accept="image/*" capture="environment">
+  <input type="file" id="libraryInput" accept="image/*">
+</div>
+
+<!-- Preview panel -->
+<div id="preview" class="section hidden">
+  <img id="previewImg" class="preview" alt="Preview">
+  <div class="row">
+    <button class="primary" id="identifyBtn">Identify Item</button>
+    <button id="clearBtn">Clear</button>
+  </div>
+</div>
+
+<!-- Loading -->
+<div id="loading" class="section loading hidden">
+  <span class="spinner"></span>Identifying&hellip;
+</div>
+
+<!-- Error -->
+<div id="error" class="error hidden"></div>
+
+<!-- Result -->
+<div id="result" class="section hidden">
+  <div id="confidenceRow" style="margin-bottom:10px;"></div>
+
+  <div class="kv"><div class="k">Model</div><div class="v" id="rModel">&mdash;</div></div>
+  <div class="kv"><div class="k">Brand</div><div class="v" id="rBrand">&mdash;</div></div>
+  <div class="kv"><div class="k">Item</div><div class="v" id="rItem">&mdash;</div></div>
+  <div class="kv"><div class="k">Adjectives</div><div class="v" id="rAdj">&mdash;</div></div>
+  <div class="kv hidden" id="notesRow"><div class="k">Notes</div><div class="v" id="rNotes">&mdash;</div></div>
+
+  <div style="margin-top:16px;">
+    <label for="query">Search Query (edit before searching)</label>
+    <textarea id="query" spellcheck="false" autocapitalize="none" autocorrect="off"></textarea>
+  </div>
+
+  <div class="section">
+    <a class="btn sold"       id="linkSold"       target="_blank" rel="noopener">eBay Sold Listings</a>
+    <a class="btn active-ln"  id="linkActive"     target="_blank" rel="noopener">eBay Active Listings</a>
+    <a class="btn terapeak"   id="linkTerapeak"   target="_blank" rel="noopener">eBay Terapeak / Research</a>
+    <a class="btn worthpoint" id="linkWorthpoint" target="_blank" rel="noopener">WorthPoint</a>
+  </div>
+
+  <button id="startOverBtn" style="margin-top:8px;">Start Over</button>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const show = (el) => el.classList.remove("hidden");
+const hide = (el) => el.classList.add("hidden");
+
+const LS_KEY   = "itemid.apikey";
+const LS_MODEL = "itemid.model";
+
+let currentImage = null; // { dataUrl, base64, mediaType }
+
+// --- Settings ---
+function loadSettings() {
+  $("apikey").value = localStorage.getItem(LS_KEY) || "";
+  $("model").value  = localStorage.getItem(LS_MODEL) || "claude-sonnet-4-6";
+}
+function saveSettings() {
+  localStorage.setItem(LS_KEY, $("apikey").value.trim());
+  localStorage.setItem(LS_MODEL, $("model").value);
+}
+$("settingsBtn").addEventListener("click", () => { loadSettings(); show($("settings")); });
+$("closeSettingsBtn").addEventListener("click", () => hide($("settings")));
+$("saveSettingsBtn").addEventListener("click", () => { saveSettings(); hide($("settings")); });
+
+// First run: open settings if no key stored
+if (!localStorage.getItem(LS_KEY)) { loadSettings(); show($("settings")); }
+
+// --- Image capture / preview ---
+$("cameraInput").addEventListener("change", e => handleFile(e.target.files[0]));
+$("libraryInput").addEventListener("change", e => handleFile(e.target.files[0]));
+$("clearBtn").addEventListener("click", resetAll);
+$("startOverBtn").addEventListener("click", resetAll);
+
+async function handleFile(file) {
+  if (!file) return;
+  try {
+    const { dataUrl, base64, mediaType } = await downscale(file, 1280);
+    currentImage = { dataUrl, base64, mediaType };
+    $("previewImg").src = dataUrl;
+    show($("preview"));
+    hide($("result"));
+    hide($("error"));
+    window.scrollTo({ top: $("preview").offsetTop - 10, behavior: "smooth" });
+  } catch (e) {
+    showError("Could not read image: " + e.message);
+  }
+}
+
+function resetAll() {
+  currentImage = null;
+  $("cameraInput").value = "";
+  $("libraryInput").value = "";
+  hide($("preview"));
+  hide($("result"));
+  hide($("error"));
+  hide($("loading"));
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function downscale(file, maxDim) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        const scale = Math.min(1, maxDim / Math.max(width, height));
+        width  = Math.round(width * scale);
+        height = Math.round(height * scale);
+        const canvas = document.createElement("canvas");
+        canvas.width = width; canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+        const base64 = dataUrl.split(",")[1];
+        resolve({ dataUrl, base64, mediaType: "image/jpeg" });
+      };
+      img.onerror = () => reject(new Error("Invalid image"));
+      img.src = reader.result;
+    };
+    reader.onerror = () => reject(new Error("File read failed"));
+    reader.readAsDataURL(file);
+  });
+}
+
+// --- Identify ---
+$("identifyBtn").addEventListener("click", identify);
+
+const PROMPT = `You are identifying an item in a photo for resale research on eBay and WorthPoint.
+
+Analyze the image and return ONLY a JSON object (no markdown fences, no prose before or after). Use this exact schema:
+
+{
+  "model": "<model number or name, or empty string>",
+  "brand": "<brand or manufacturer, or empty string>",
+  "item": "<what the item is (noun phrase, 2-4 words, e.g. 'portable cassette player')>",
+  "adjectives": "<2-4 core descriptive terms useful for search: color, material, size, era, edition, configuration. Space-separated, no commas>",
+  "search_query": "<a tight eBay search string in this exact order: MODEL BRAND ITEM ADJECTIVES. Omit any unknown fields. No filler words. No punctuation beyond what appears in the actual model/brand name. Optimized for matching eBay listings.>",
+  "confidence": "<high | medium | low>",
+  "notes": "<one short sentence flagging anything uncertain worth user verification, or empty string>"
+}
+
+Rules:
+- Be specific with model/brand when visibly identifiable; leave empty if you cannot see or are not confident.
+- Do not invent details. Low confidence is acceptable.
+- The search_query is what YOU would type into eBay to find comps: clean, tight, no fluff.
+- Return JSON and nothing else.`;
+
+async function identify() {
+  const key = localStorage.getItem(LS_KEY);
+  if (!key) {
+    showError("Set your Anthropic API key in \u2699 first.");
+    show($("settings"));
+    return;
+  }
+  if (!currentImage) return;
+
+  hide($("error"));
+  hide($("result"));
+  show($("loading"));
+  $("identifyBtn").disabled = true;
+
+  try {
+    const model = localStorage.getItem(LS_MODEL) || "claude-sonnet-4-6";
+    const data = await callClaude(key, model, currentImage);
+    populateResult(data);
+    show($("result"));
+    window.scrollTo({ top: $("result").offsetTop - 10, behavior: "smooth" });
+  } catch (e) {
+    showError(e.message || String(e));
+  } finally {
+    hide($("loading"));
+    $("identifyBtn").disabled = false;
+  }
+}
+
+async function callClaude(apiKey, model, image) {
+  const body = {
+    model: model,
+    max_tokens: 600,
+    messages: [{
+      role: "user",
+      content: [
+        { type: "image", source: { type: "base64", media_type: image.mediaType, data: image.base64 } },
+        { type: "text",  text: PROMPT }
+      ]
+    }]
+  };
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true"
+    },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error("API " + res.status + ": " + text.slice(0, 400));
+  }
+  const json = await res.json();
+  const text = (json.content || []).filter(b => b.type === "text").map(b => b.text).join("\n").trim();
+  return parseJson(text);
+}
+
+function parseJson(text) {
+  let t = text.trim();
+  if (t.startsWith("```")) {
+    t = t.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/, "").trim();
+  }
+  const first = t.indexOf("{");
+  const last  = t.lastIndexOf("}");
+  if (first >= 0 && last > first) t = t.slice(first, last + 1);
+  try {
+    return JSON.parse(t);
+  } catch (e) {
+    throw new Error("Could not parse model response as JSON:\n" + text.slice(0, 400));
+  }
+}
+
+function populateResult(d) {
+  $("rModel").textContent = d.model || "\u2014";
+  $("rBrand").textContent = d.brand || "\u2014";
+  $("rItem").textContent  = d.item  || "\u2014";
+  $("rAdj").textContent   = d.adjectives || "\u2014";
+  if (d.notes && String(d.notes).trim()) {
+    $("rNotes").textContent = d.notes;
+    show($("notesRow"));
+  } else {
+    hide($("notesRow"));
+  }
+  const conf = String(d.confidence || "").toLowerCase();
+  const confEl = $("confidenceRow");
+  if (["high", "medium", "low"].includes(conf)) {
+    confEl.innerHTML = '<span class="confidence ' + conf + '">Confidence: ' + conf + "</span>";
+  } else {
+    confEl.innerHTML = "";
+  }
+  $("query").value = String(d.search_query || "").trim();
+  updateLinks();
+}
+
+// --- Links ---
+$("query").addEventListener("input", updateLinks);
+
+function updateLinks() {
+  const raw = $("query").value.trim();
+  const q = encodeURIComponent(raw);
+  $("linkSold").href       = "https://www.ebay.com/sch/i.html?_nkw=" + q + "&LH_Sold=1&LH_Complete=1";
+  $("linkActive").href     = "https://www.ebay.com/sch/i.html?_nkw=" + q;
+  $("linkTerapeak").href   = "https://www.ebay.com/sh/research?marketplace=EBAY-US&keywords=" + q + "&dayRange=90&tabName=SOLD";
+  $("linkWorthpoint").href = "https://www.worthpoint.com/worthopedia/search?query=" + q;
+}
+
+function showError(msg) {
+  $("error").textContent = msg;
+  show($("error"));
+}
+</script>
+
+</body>
+</html>
