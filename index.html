@@ -43,12 +43,13 @@
   button:active, .btn:active { background: #3a3a3a; }
   button.primary { background: #3b82f6; border-color: #3b82f6; color: white; font-weight: 600; }
   button.primary:active { background: #2563eb; }
-  button:disabled { opacity: 0.5; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
   .btn.sold       { background: #1f3a1f; border-color: #305030; }
   .btn.active-ln  { background: #1f2f4a; border-color: #304570; }
   .btn.terapeak   { background: #2e1f4a; border-color: #452f70; }
   .btn.worthpoint { background: #4a2f1f; border-color: #70452f; }
-  input[type="text"], input[type="password"], textarea, select {
+  .btn.danger, button.danger { background: #3a1f1f; border-color: #5a2f2f; color: #ffaaaa; }
+  input[type="text"], input[type="password"], input[type="search"], textarea, select {
     width: 100%;
     padding: 12px;
     font-size: 1em;
@@ -61,13 +62,27 @@
   }
   textarea { min-height: 72px; resize: vertical; }
   input[type="file"] { display: none; }
-  .preview { width: 100%; max-height: 320px; object-fit: contain; border-radius: 8px; background: #0f0f0f; margin: 8px 0; }
   .row { display: flex; gap: 8px; }
   .row > * { flex: 1; margin-bottom: 0; }
-  .kv { padding: 10px 0; border-bottom: 1px solid #2a2a2a; }
-  .kv:last-child { border-bottom: none; }
+  .kv { padding: 10px 36px 10px 0; border-bottom: 1px solid #2a2a2a; position: relative; }
+  .kv:last-of-type { border-bottom: none; }
   .kv .k { color: #888; font-size: 0.75em; text-transform: uppercase; letter-spacing: 0.06em; }
   .kv .v { font-size: 1em; margin-top: 3px; word-break: break-word; }
+  .kv .x-mini {
+    position: absolute; top: 8px; right: 0;
+    background: none; border: none;
+    color: #666; font-size: 1.4em; line-height: 1;
+    padding: 4px 10px; width: auto; margin: 0;
+    border-radius: 4px;
+  }
+  .kv .x-mini:active { background: #2a2a2a; color: #ff8888; }
+  .inline-btn {
+    display: inline-block; width: auto;
+    padding: 4px 10px; font-size: 0.75em;
+    background: #2a2a2a; border: 1px solid #444;
+    border-radius: 4px; color: #aaa;
+    margin: 6px 0 0 0; text-transform: uppercase; letter-spacing: 0.05em;
+  }
   .hidden { display: none !important; }
   .error { background: #4a1a1a; border: 1px solid #7a3a3a; color: #ffcccc; padding: 12px; border-radius: 8px; margin: 8px 0; font-size: 0.9em; white-space: pre-wrap; }
   .loading { text-align: center; padding: 24px; color: #888; }
@@ -81,24 +96,83 @@
   .confidence.high   { background: #1f3a1f; color: #9fd89f; }
   .confidence.medium { background: #3a3a1f; color: #d8d89f; }
   .confidence.low    { background: #3a1f1f; color: #d89f9f; }
-  .gear {
-    background: none; border: none; font-size: 1.4em; padding: 4px 10px;
-    width: auto; margin: 0; color: #888; cursor: pointer;
+  .icon-btn {
+    background: none; border: none; font-size: 1.3em; padding: 6px 10px;
+    width: auto; margin: 0; color: #888; cursor: pointer; border-radius: 6px;
   }
-  .gear:active { background: #2a2a2a; }
+  .icon-btn:active { background: #2a2a2a; }
+  .nav { display: flex; gap: 2px; }
   label { display: block; font-size: 0.75em; color: #888; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.06em; }
   .footnote { font-size: 0.8em; color: #666; margin-top: 8px; }
+
+  .photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 8px; margin: 8px 0; }
+  .photo { position: relative; aspect-ratio: 1; background: #0f0f0f; border-radius: 6px; overflow: hidden; }
+  .photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .photo .x-btn {
+    position: absolute; top: 4px; right: 4px;
+    background: rgba(0,0,0,0.75); color: white; border: none;
+    width: 26px; height: 26px; border-radius: 13px;
+    font-size: 16px; padding: 0; margin: 0;
+    display: flex; align-items: center; justify-content: center;
+    line-height: 1;
+  }
+  .photo .x-btn:active { background: rgba(200,0,0,0.8); }
+  .photo-count { font-size: 0.8em; color: #888; margin: 4px 0 8px; }
+
+  .hint-label-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+  .hint-pin { font-size: 1em; color: #555; transition: color 0.15s; }
+  .hint-pin.active { color: #3b82f6; }
+  .check-row { display: flex; align-items: center; gap: 8px; font-size: 0.9em; color: #aaa; margin-top: -2px; }
+  .check-row input[type="checkbox"] {
+    width: auto; margin: 0; transform: scale(1.2); accent-color: #3b82f6;
+  }
+  .check-row label {
+    margin: 0; text-transform: none; letter-spacing: 0; font-size: 0.95em; color: #aaa;
+  }
+
+  .hist-group-head {
+    color: #888; font-size: 0.8em; text-transform: uppercase; letter-spacing: 0.08em;
+    margin: 18px 0 6px; padding-bottom: 4px; border-bottom: 1px solid #2a2a2a;
+  }
+  .hist-entry {
+    display: flex; gap: 12px; padding: 10px;
+    background: #222; border: 1px solid #333; border-radius: 8px;
+    margin-bottom: 8px; cursor: pointer; align-items: center;
+  }
+  .hist-entry:active { background: #2a2a2a; }
+  .hist-thumb {
+    width: 60px; height: 60px; border-radius: 6px;
+    background: #0f0f0f; object-fit: cover; flex-shrink: 0;
+  }
+  .hist-meta { flex: 1; min-width: 0; }
+  .hist-query { font-size: 0.95em; color: #e8e8e8; word-break: break-word; }
+  .hist-notes { font-size: 0.82em; color: #aaa; margin-top: 3px; word-break: break-word; }
+  .hist-time { font-size: 0.75em; color: #666; margin-top: 3px; }
+  .hist-dot {
+    width: 7px; height: 7px; border-radius: 4px; background: #3b82f6;
+    display: inline-block; margin-right: 6px; vertical-align: middle;
+  }
+  .hist-detail-img {
+    width: 100%; max-height: 280px; object-fit: contain;
+    border-radius: 8px; background: #0f0f0f; margin: 8px 0;
+  }
+  .back-btn {
+    width: auto; display: inline-block; padding: 8px 14px; font-size: 0.9em; margin: 0 0 8px 0;
+  }
+  .saved-flash { background: #1f3a1f !important; border-color: #305030 !important; }
 </style>
 </head>
 <body>
 
 <header>
-  <h1>Item ID</h1>
-  <button class="gear" id="settingsBtn" title="Settings" aria-label="Settings">&#9881;</button>
+  <h1 id="pageTitle">Item ID</h1>
+  <div class="nav">
+    <button class="icon-btn" id="historyBtn" title="History" aria-label="History">&#9776;</button>
+    <button class="icon-btn" id="settingsBtn" title="Settings" aria-label="Settings">&#9881;</button>
+  </div>
 </header>
-<div class="muted">Identify item &rarr; research prices</div>
+<div class="muted" id="subtitle">Identify item &rarr; research prices</div>
 
-<!-- Settings panel -->
 <div id="settings" class="section hidden">
   <label for="apikey">Anthropic API Key</label>
   <input type="password" id="apikey" placeholder="sk-ant-..." autocomplete="off" spellcheck="false">
@@ -115,69 +189,140 @@
   <div class="footnote">Key is stored only in this browser on this device.</div>
 </div>
 
-<!-- Capture panel -->
-<div id="capture" class="section">
-  <div class="row">
-    <label class="btn" for="cameraInput">&#128247; Take Photo</label>
-    <label class="btn" for="libraryInput">&#128444; Choose Photo</label>
+<div id="view-main">
+
+  <div class="section">
+    <div class="row">
+      <label class="btn" for="cameraInput">&#128247; Add Photo</label>
+      <label class="btn" for="libraryInput">&#128444; Choose Photos</label>
+    </div>
+    <input type="file" id="cameraInput" accept="image/*" capture="environment">
+    <input type="file" id="libraryInput" accept="image/*" multiple>
   </div>
-  <input type="file" id="cameraInput" accept="image/*" capture="environment">
-  <input type="file" id="libraryInput" accept="image/*">
-</div>
 
-<!-- Preview panel -->
-<div id="preview" class="section hidden">
-  <img id="previewImg" class="preview" alt="Preview">
-  <div class="row">
-    <button class="primary" id="identifyBtn">Identify Item</button>
-    <button id="clearBtn">Clear</button>
-  </div>
-</div>
-
-<!-- Loading -->
-<div id="loading" class="section loading hidden">
-  <span class="spinner"></span>Identifying&hellip;
-</div>
-
-<!-- Error -->
-<div id="error" class="error hidden"></div>
-
-<!-- Result -->
-<div id="result" class="section hidden">
-  <div id="confidenceRow" style="margin-bottom:10px;"></div>
-
-  <div class="kv"><div class="k">Model</div><div class="v" id="rModel">&mdash;</div></div>
-  <div class="kv"><div class="k">Brand</div><div class="v" id="rBrand">&mdash;</div></div>
-  <div class="kv"><div class="k">Item</div><div class="v" id="rItem">&mdash;</div></div>
-  <div class="kv"><div class="k">Adjectives</div><div class="v" id="rAdj">&mdash;</div></div>
-  <div class="kv hidden" id="notesRow"><div class="k">Notes</div><div class="v" id="rNotes">&mdash;</div></div>
-
-  <div style="margin-top:16px;">
-    <label for="query">Search Query (edit before searching)</label>
-    <textarea id="query" spellcheck="false" autocapitalize="none" autocorrect="off"></textarea>
+  <div id="photoGridSection" class="section hidden">
+    <div class="photo-count" id="photoCount"></div>
+    <div id="photoGrid" class="photos"></div>
+    <button id="clearPhotosBtn">Clear All Photos</button>
   </div>
 
   <div class="section">
-    <a class="btn sold"       id="linkSold"       target="_blank" rel="noopener">eBay Sold Listings</a>
-    <a class="btn active-ln"  id="linkActive"     target="_blank" rel="noopener">eBay Active Listings</a>
-    <a class="btn terapeak"   id="linkTerapeak"   target="_blank" rel="noopener">eBay Terapeak / Research</a>
-    <a class="btn worthpoint" id="linkWorthpoint" target="_blank" rel="noopener">WorthPoint</a>
+    <div class="hint-label-row">
+      <label for="hintText" style="margin:0;">Hint (optional)</label>
+      <span class="hint-pin" id="hintPinIcon" aria-hidden="true">&#128204;</span>
+    </div>
+    <textarea id="hintText" placeholder="e.g., 'vintage Japanese porcelain, maker's mark on base'" spellcheck="false"></textarea>
+    <div class="check-row">
+      <input type="checkbox" id="stickyHint">
+      <label for="stickyHint">Keep hint for next item</label>
+    </div>
   </div>
 
-  <button id="startOverBtn" style="margin-top:8px;">Start Over</button>
+  <div class="section">
+    <button class="primary" id="identifyBtn" disabled>Identify Item</button>
+  </div>
+
+  <div id="loading" class="section loading hidden"><span class="spinner"></span>Identifying&hellip;</div>
+  <div id="error" class="error hidden"></div>
+
+  <div id="result" class="section hidden">
+    <div id="confidenceRow" style="margin-bottom:10px;"></div>
+
+    <div class="kv" id="kvModel">
+      <button class="x-mini" data-field="model" title="Remove">&times;</button>
+      <div class="k">Model</div>
+      <div class="v" id="rModel">&mdash;</div>
+    </div>
+    <div class="kv" id="kvBrand">
+      <button class="x-mini" data-field="brand" title="Remove">&times;</button>
+      <div class="k">Brand</div>
+      <div class="v" id="rBrand">&mdash;</div>
+    </div>
+    <div class="kv" id="kvItem">
+      <button class="x-mini" data-field="item" title="Remove">&times;</button>
+      <div class="k">Item</div>
+      <div class="v" id="rItem">&mdash;</div>
+    </div>
+    <div class="kv" id="kvAdj">
+      <button class="x-mini" data-field="adjectives" title="Remove">&times;</button>
+      <div class="k">Adjectives</div>
+      <div class="v" id="rAdj">&mdash;</div>
+      <button class="inline-btn" id="keepFirstAdjBtn">Keep 1st only</button>
+    </div>
+    <div class="kv hidden" id="notesRow"><div class="k">Notes</div><div class="v" id="rNotes">&mdash;</div></div>
+
+    <div style="margin-top:16px;">
+      <label for="query">Search Query (edit before searching)</label>
+      <textarea id="query" spellcheck="false" autocapitalize="none" autocorrect="off"></textarea>
+    </div>
+
+    <div class="section">
+      <a class="btn sold"       id="linkSold"       target="_blank" rel="noopener">eBay Sold Listings</a>
+      <a class="btn active-ln"  id="linkActive"     target="_blank" rel="noopener">eBay Active Listings</a>
+      <a class="btn terapeak"   id="linkTerapeak"   target="_blank" rel="noopener">eBay Terapeak / Research</a>
+      <a class="btn worthpoint" id="linkWorthpoint" target="_blank" rel="noopener">WorthPoint</a>
+    </div>
+
+    <button class="primary" id="saveHistoryBtn">&#128190; Save to History</button>
+    <button id="startOverBtn">Start Over</button>
+  </div>
+</div>
+
+<div id="view-history" class="hidden">
+  <button class="back-btn" id="histBackToMainBtn">&larr; Back</button>
+  <div class="section">
+    <input type="search" id="histSearch" placeholder="Search history&hellip;">
+  </div>
+  <div class="row">
+    <button id="exportBtn">Export</button>
+    <button id="importBtn">Import</button>
+  </div>
+  <input type="file" id="importFile" accept="application/json,.json">
+  <button id="clear90Btn" class="danger">Clear entries older than 90 days</button>
+  <div id="histList" class="section"></div>
+  <div id="histEmpty" class="section hidden" style="text-align:center; color:#666; padding: 40px 16px;">
+    No history yet.<br>Identify an item and tap &ldquo;Save to History&rdquo;.
+  </div>
+</div>
+
+<div id="view-history-detail" class="hidden">
+  <button class="back-btn" id="histBackBtn">&larr; Back to History</button>
+  <img id="histDetailImg" class="hist-detail-img hidden" alt="">
+  <div id="histDetailMeta"></div>
+  <div style="margin-top:16px;">
+    <label for="histDetailQuery">Search Query</label>
+    <textarea id="histDetailQuery" spellcheck="false" autocapitalize="none" autocorrect="off"></textarea>
+  </div>
+  <div class="section">
+    <a class="btn sold"       id="histLinkSold"       target="_blank" rel="noopener">eBay Sold Listings</a>
+    <a class="btn active-ln"  id="histLinkActive"     target="_blank" rel="noopener">eBay Active Listings</a>
+    <a class="btn terapeak"   id="histLinkTerapeak"   target="_blank" rel="noopener">eBay Terapeak / Research</a>
+    <a class="btn worthpoint" id="histLinkWorthpoint" target="_blank" rel="noopener">WorthPoint</a>
+  </div>
+  <div style="margin-top:16px;">
+    <label for="histDetailNotes">Notes / Value</label>
+    <textarea id="histDetailNotes" placeholder="e.g., '$45 sold eBay 4/26, WP comps $30-60'"></textarea>
+  </div>
+  <button class="primary" id="histSaveBtn">Save Changes</button>
+  <button class="danger" id="histDeleteBtn">Delete Entry</button>
 </div>
 
 <script>
-const $ = (id) => document.getElementById(id);
-const show = (el) => el.classList.remove("hidden");
-const hide = (el) => el.classList.add("hidden");
+"use strict";
 
-const LS_KEY   = "itemid.apikey";
-const LS_MODEL = "itemid.model";
+var $ = function(id) { return document.getElementById(id); };
+var show = function(el) { el.classList.remove("hidden"); };
+var hide = function(el) { el.classList.add("hidden"); };
 
-let currentImage = null; // { dataUrl, base64, mediaType }
+var LS_KEY    = "itemid.apikey";
+var LS_MODEL  = "itemid.model";
+var LS_HINT   = "itemid.hint";
+var LS_STICKY = "itemid.sticky";
 
-// --- Settings ---
+var photos = [];
+var fields = { model: "", brand: "", item: "", adjectives: "", notes: "", confidence: "" };
+var currentHistoryId = null;
+
 function loadSettings() {
   $("apikey").value = localStorage.getItem(LS_KEY) || "";
   $("model").value  = localStorage.getItem(LS_MODEL) || "claude-sonnet-4-6";
@@ -186,102 +331,172 @@ function saveSettings() {
   localStorage.setItem(LS_KEY, $("apikey").value.trim());
   localStorage.setItem(LS_MODEL, $("model").value);
 }
-$("settingsBtn").addEventListener("click", () => { loadSettings(); show($("settings")); });
-$("closeSettingsBtn").addEventListener("click", () => hide($("settings")));
-$("saveSettingsBtn").addEventListener("click", () => { saveSettings(); hide($("settings")); });
-
-// First run: open settings if no key stored
+$("settingsBtn").addEventListener("click", function() { loadSettings(); show($("settings")); });
+$("closeSettingsBtn").addEventListener("click", function() { hide($("settings")); });
+$("saveSettingsBtn").addEventListener("click", function() { saveSettings(); hide($("settings")); });
 if (!localStorage.getItem(LS_KEY)) { loadSettings(); show($("settings")); }
 
-// --- Image capture / preview ---
-$("cameraInput").addEventListener("change", e => handleFile(e.target.files[0]));
-$("libraryInput").addEventListener("change", e => handleFile(e.target.files[0]));
-$("clearBtn").addEventListener("click", resetAll);
-$("startOverBtn").addEventListener("click", resetAll);
-
-async function handleFile(file) {
-  if (!file) return;
-  try {
-    const { dataUrl, base64, mediaType } = await downscale(file, 1280);
-    currentImage = { dataUrl, base64, mediaType };
-    $("previewImg").src = dataUrl;
-    show($("preview"));
-    hide($("result"));
-    hide($("error"));
-    window.scrollTo({ top: $("preview").offsetTop - 10, behavior: "smooth" });
-  } catch (e) {
-    showError("Could not read image: " + e.message);
+function loadHintState() {
+  var sticky = localStorage.getItem(LS_STICKY) === "1";
+  $("stickyHint").checked = sticky;
+  if (sticky) {
+    $("hintText").value = localStorage.getItem(LS_HINT) || "";
   }
+  updateHintPin();
 }
+function updateHintPin() {
+  $("hintPinIcon").classList.toggle("active", $("stickyHint").checked);
+}
+$("stickyHint").addEventListener("change", function() {
+  var s = $("stickyHint").checked;
+  localStorage.setItem(LS_STICKY, s ? "1" : "0");
+  if (s) localStorage.setItem(LS_HINT, $("hintText").value);
+  else   localStorage.removeItem(LS_HINT);
+  updateHintPin();
+});
+$("hintText").addEventListener("input", function() {
+  if ($("stickyHint").checked) localStorage.setItem(LS_HINT, $("hintText").value);
+});
 
-function resetAll() {
-  currentImage = null;
+$("cameraInput").addEventListener("change", function(e) { handleFiles(e.target.files); });
+$("libraryInput").addEventListener("change", function(e) { handleFiles(e.target.files); });
+$("clearPhotosBtn").addEventListener("click", clearPhotos);
+
+async function handleFiles(fileList) {
+  var files = Array.from(fileList);
+  for (var i = 0; i < files.length; i++) {
+    if (photos.length >= 10) { showError("Max 10 photos per item."); break; }
+    try {
+      var p = await downscale(files[i], 1280);
+      photos.push(p);
+    } catch (e) {
+      showError("Couldn't read an image: " + e.message);
+    }
+  }
   $("cameraInput").value = "";
   $("libraryInput").value = "";
-  hide($("preview"));
+  renderPhotos();
+  updateIdentifyButton();
+  if (photos.length > 0) hide($("error"));
+}
+
+function clearPhotos() {
+  photos = [];
+  renderPhotos();
+  updateIdentifyButton();
   hide($("result"));
   hide($("error"));
-  hide($("loading"));
-  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function renderPhotos() {
+  var grid = $("photoGrid");
+  grid.innerHTML = "";
+  if (photos.length === 0) { hide($("photoGridSection")); return; }
+  show($("photoGridSection"));
+  $("photoCount").textContent = photos.length + " photo" + (photos.length === 1 ? "" : "s") + " (max 10)";
+  photos.forEach(function(p, idx) {
+    var cell = document.createElement("div");
+    cell.className = "photo";
+    var img = document.createElement("img");
+    img.src = p.dataUrl; img.alt = "";
+    cell.appendChild(img);
+    var x = document.createElement("button");
+    x.className = "x-btn";
+    x.innerHTML = "&times;";
+    x.setAttribute("aria-label", "Remove photo");
+    x.addEventListener("click", function(e) {
+      e.stopPropagation();
+      photos.splice(idx, 1);
+      renderPhotos();
+      updateIdentifyButton();
+    });
+    cell.appendChild(x);
+    grid.appendChild(cell);
+  });
+}
+
+function updateIdentifyButton() {
+  $("identifyBtn").disabled = photos.length === 0;
 }
 
 function downscale(file, maxDim) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const img = new Image();
-      img.onload = () => {
-        let { width, height } = img;
-        const scale = Math.min(1, maxDim / Math.max(width, height));
+  return new Promise(function(resolve, reject) {
+    var reader = new FileReader();
+    reader.onload = function() {
+      var img = new Image();
+      img.onload = function() {
+        var width = img.width, height = img.height;
+        var scale = Math.min(1, maxDim / Math.max(width, height));
         width  = Math.round(width * scale);
         height = Math.round(height * scale);
-        const canvas = document.createElement("canvas");
+        var canvas = document.createElement("canvas");
         canvas.width = width; canvas.height = height;
-        const ctx = canvas.getContext("2d");
+        var ctx = canvas.getContext("2d");
         ctx.drawImage(img, 0, 0, width, height);
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
-        const base64 = dataUrl.split(",")[1];
-        resolve({ dataUrl, base64, mediaType: "image/jpeg" });
+        var dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+        var base64 = dataUrl.split(",")[1];
+        resolve({ dataUrl: dataUrl, base64: base64, mediaType: "image/jpeg" });
       };
-      img.onerror = () => reject(new Error("Invalid image"));
+      img.onerror = function() { reject(new Error("Invalid image")); };
       img.src = reader.result;
     };
-    reader.onerror = () => reject(new Error("File read failed"));
+    reader.onerror = function() { reject(new Error("File read failed")); };
     reader.readAsDataURL(file);
   });
 }
 
-// --- Identify ---
-$("identifyBtn").addEventListener("click", identify);
-
-const PROMPT = `You are identifying an item in a photo for resale research on eBay and WorthPoint.
-
-Analyze the image and return ONLY a JSON object (no markdown fences, no prose before or after). Use this exact schema:
-
-{
-  "model": "<model number or name, or empty string>",
-  "brand": "<brand or manufacturer, or empty string>",
-  "item": "<what the item is (noun phrase, 2-4 words, e.g. 'portable cassette player')>",
-  "adjectives": "<2-4 core descriptive terms useful for search: color, material, size, era, edition, configuration. Space-separated, no commas>",
-  "search_query": "<a tight eBay search string in this exact order: MODEL BRAND ITEM ADJECTIVES. Omit any unknown fields. No filler words. No punctuation beyond what appears in the actual model/brand name. Optimized for matching eBay listings.>",
-  "confidence": "<high | medium | low>",
-  "notes": "<one short sentence flagging anything uncertain worth user verification, or empty string>"
+function makeThumbnail(dataUrl, size) {
+  return new Promise(function(resolve, reject) {
+    var img = new Image();
+    img.onload = function() {
+      var canvas = document.createElement("canvas");
+      canvas.width = size; canvas.height = size;
+      var ctx = canvas.getContext("2d");
+      var src = Math.min(img.width, img.height);
+      var sx = (img.width  - src) / 2;
+      var sy = (img.height - src) / 2;
+      ctx.drawImage(img, sx, sy, src, src, 0, 0, size, size);
+      resolve(canvas.toDataURL("image/jpeg", 0.7));
+    };
+    img.onerror = function() { reject(new Error("Thumb failed")); };
+    img.src = dataUrl;
+  });
 }
 
-Rules:
-- Be specific with model/brand when visibly identifiable; leave empty if you cannot see or are not confident.
-- Do not invent details. Low confidence is acceptable.
-- The search_query is what YOU would type into eBay to find comps: clean, tight, no fluff.
-- Return JSON and nothing else.`;
+$("identifyBtn").addEventListener("click", identify);
+
+var PROMPT_BASE = "You are identifying an item in a photo (or multiple photos of the same item) for resale research on eBay and WorthPoint.\n\n" +
+"Analyze the image(s) and return ONLY a JSON object (no markdown fences, no prose before or after). Use this exact schema:\n\n" +
+"{\n" +
+"  \"model\": \"<model number or name, or empty string>\",\n" +
+"  \"brand\": \"<brand or manufacturer, or empty string>\",\n" +
+"  \"item\": \"<what the item is (noun phrase, 2-4 words, e.g. 'portable cassette player')>\",\n" +
+"  \"adjectives\": \"<2-4 core descriptive terms useful for search: color, material, size, era, edition, configuration. Space-separated, no commas>\",\n" +
+"  \"confidence\": \"<high | medium | low>\",\n" +
+"  \"notes\": \"<one short sentence flagging anything uncertain worth user verification, or empty string>\"\n" +
+"}\n\n" +
+"Rules:\n" +
+"- Be specific with model/brand when visibly identifiable; leave empty if not confident.\n" +
+"- Do not invent details. Low confidence is acceptable.\n" +
+"- The output fields will be assembled in this order for an eBay search: MODEL BRAND ITEM ADJECTIVES. Keep each field clean, tight, no filler words.\n" +
+"- Return JSON and nothing else.";
+
+function buildPrompt(hint) {
+  if (hint && hint.trim()) {
+    return "USER CONTEXT (a helpful prior from the user; verify against the photo, do not treat as fact): " +
+      hint.trim() + "\n\n" + PROMPT_BASE;
+  }
+  return PROMPT_BASE;
+}
 
 async function identify() {
-  const key = localStorage.getItem(LS_KEY);
+  var key = localStorage.getItem(LS_KEY);
   if (!key) {
     showError("Set your Anthropic API key in \u2699 first.");
     show($("settings"));
     return;
   }
-  if (!currentImage) return;
+  if (photos.length === 0) return;
 
   hide($("error"));
   hide($("result"));
@@ -289,32 +504,35 @@ async function identify() {
   $("identifyBtn").disabled = true;
 
   try {
-    const model = localStorage.getItem(LS_MODEL) || "claude-sonnet-4-6";
-    const data = await callClaude(key, model, currentImage);
+    var model = localStorage.getItem(LS_MODEL) || "claude-sonnet-4-6";
+    var hint = $("hintText").value;
+    var data = await callClaude(key, model, photos, hint);
     populateResult(data);
     show($("result"));
+    if (!$("stickyHint").checked) $("hintText").value = "";
+    var sb = $("saveHistoryBtn");
+    sb.innerHTML = "&#128190; Save to History";
+    sb.classList.remove("saved-flash");
+    sb.disabled = false;
     window.scrollTo({ top: $("result").offsetTop - 10, behavior: "smooth" });
   } catch (e) {
     showError(e.message || String(e));
   } finally {
     hide($("loading"));
-    $("identifyBtn").disabled = false;
+    updateIdentifyButton();
   }
 }
 
-async function callClaude(apiKey, model, image) {
-  const body = {
-    model: model,
-    max_tokens: 600,
-    messages: [{
-      role: "user",
-      content: [
-        { type: "image", source: { type: "base64", media_type: image.mediaType, data: image.base64 } },
-        { type: "text",  text: PROMPT }
-      ]
-    }]
-  };
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
+async function callClaude(apiKey, model, photosList, hint) {
+  var content = [];
+  for (var i = 0; i < photosList.length; i++) {
+    var p = photosList[i];
+    content.push({ type: "image", source: { type: "base64", media_type: p.mediaType, data: p.base64 } });
+  }
+  content.push({ type: "text", text: buildPrompt(hint) });
+
+  var body = { model: model, max_tokens: 600, messages: [{ role: "user", content: content }] };
+  var res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
       "content-type": "application/json",
@@ -325,67 +543,460 @@ async function callClaude(apiKey, model, image) {
     body: JSON.stringify(body)
   });
   if (!res.ok) {
-    const text = await res.text();
+    var text = await res.text();
     throw new Error("API " + res.status + ": " + text.slice(0, 400));
   }
-  const json = await res.json();
-  const text = (json.content || []).filter(b => b.type === "text").map(b => b.text).join("\n").trim();
-  return parseJson(text);
+  var json = await res.json();
+  var textOut = (json.content || []).filter(function(b) { return b.type === "text"; }).map(function(b) { return b.text; }).join("\n").trim();
+  return parseJson(textOut);
 }
 
 function parseJson(text) {
-  let t = text.trim();
-  if (t.startsWith("```")) {
+  var t = text.trim();
+  if (t.indexOf("```") === 0) {
     t = t.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/, "").trim();
   }
-  const first = t.indexOf("{");
-  const last  = t.lastIndexOf("}");
+  var first = t.indexOf("{");
+  var last  = t.lastIndexOf("}");
   if (first >= 0 && last > first) t = t.slice(first, last + 1);
-  try {
-    return JSON.parse(t);
-  } catch (e) {
-    throw new Error("Could not parse model response as JSON:\n" + text.slice(0, 400));
-  }
+  try { return JSON.parse(t); }
+  catch (e) { throw new Error("Could not parse model response as JSON:\n" + text.slice(0, 400)); }
 }
 
 function populateResult(d) {
-  $("rModel").textContent = d.model || "\u2014";
-  $("rBrand").textContent = d.brand || "\u2014";
-  $("rItem").textContent  = d.item  || "\u2014";
-  $("rAdj").textContent   = d.adjectives || "\u2014";
-  if (d.notes && String(d.notes).trim()) {
-    $("rNotes").textContent = d.notes;
-    show($("notesRow"));
-  } else {
-    hide($("notesRow"));
-  }
-  const conf = String(d.confidence || "").toLowerCase();
-  const confEl = $("confidenceRow");
-  if (["high", "medium", "low"].includes(conf)) {
+  fields.model      = String(d.model || "").trim();
+  fields.brand      = String(d.brand || "").trim();
+  fields.item       = String(d.item  || "").trim();
+  fields.adjectives = String(d.adjectives || "").trim();
+  fields.notes      = String(d.notes || "").trim();
+  fields.confidence = String(d.confidence || "").toLowerCase();
+  renderFields();
+  rebuildQuery();
+}
+
+function renderFields() {
+  $("rModel").textContent = fields.model || "\u2014";
+  $("rBrand").textContent = fields.brand || "\u2014";
+  $("rItem").textContent  = fields.item  || "\u2014";
+  $("rAdj").textContent   = fields.adjectives || "\u2014";
+  if (fields.notes) { $("rNotes").textContent = fields.notes; show($("notesRow")); }
+  else { hide($("notesRow")); }
+  var conf = fields.confidence;
+  var confEl = $("confidenceRow");
+  if (conf === "high" || conf === "medium" || conf === "low") {
     confEl.innerHTML = '<span class="confidence ' + conf + '">Confidence: ' + conf + "</span>";
   } else {
     confEl.innerHTML = "";
   }
-  $("query").value = String(d.search_query || "").trim();
+}
+
+function rebuildQuery() {
+  var parts = [];
+  if (fields.model)      parts.push(fields.model);
+  if (fields.brand)      parts.push(fields.brand);
+  if (fields.item)       parts.push(fields.item);
+  if (fields.adjectives) parts.push(fields.adjectives);
+  $("query").value = parts.join(" ").replace(/\s+/g, " ").trim();
   updateLinks();
 }
 
-// --- Links ---
-$("query").addEventListener("input", updateLinks);
+document.querySelectorAll("#result .x-mini").forEach(function(btn) {
+  btn.addEventListener("click", function() {
+    var f = btn.dataset.field;
+    if (f && (f in fields)) {
+      fields[f] = "";
+      renderFields();
+      rebuildQuery();
+    }
+  });
+});
 
+$("keepFirstAdjBtn").addEventListener("click", function() {
+  var first = (fields.adjectives || "").split(/\s+/).filter(Boolean)[0] || "";
+  fields.adjectives = first;
+  renderFields();
+  rebuildQuery();
+});
+
+$("query").addEventListener("input", updateLinks);
 function updateLinks() {
-  const raw = $("query").value.trim();
-  const q = encodeURIComponent(raw);
+  var q = encodeURIComponent($("query").value.trim());
   $("linkSold").href       = "https://www.ebay.com/sch/i.html?_nkw=" + q + "&LH_Sold=1&LH_Complete=1";
   $("linkActive").href     = "https://www.ebay.com/sch/i.html?_nkw=" + q;
   $("linkTerapeak").href   = "https://www.ebay.com/sh/research?marketplace=EBAY-US&keywords=" + q + "&dayRange=90&tabName=SOLD";
   $("linkWorthpoint").href = "https://www.worthpoint.com/worthopedia/search?query=" + q;
 }
 
+$("startOverBtn").addEventListener("click", function() {
+  photos = [];
+  fields = { model: "", brand: "", item: "", adjectives: "", notes: "", confidence: "" };
+  if (!$("stickyHint").checked) $("hintText").value = "";
+  renderPhotos();
+  updateIdentifyButton();
+  hide($("result"));
+  hide($("error"));
+  $("query").value = "";
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
+
 function showError(msg) {
   $("error").textContent = msg;
   show($("error"));
 }
+
+var DB_NAME = "itemid";
+var DB_VERSION = 1;
+var STORE = "items";
+
+function openDb() {
+  return new Promise(function(resolve, reject) {
+    var req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = function() {
+      var db = req.result;
+      if (!db.objectStoreNames.contains(STORE)) {
+        var os = db.createObjectStore(STORE, { keyPath: "id", autoIncrement: true });
+        os.createIndex("timestamp", "timestamp", { unique: false });
+      }
+    };
+    req.onsuccess = function() { resolve(req.result); };
+    req.onerror   = function() { reject(req.error); };
+  });
+}
+function dbStore(mode) {
+  return openDb().then(function(db) { return db.transaction(STORE, mode).objectStore(STORE); });
+}
+async function dbAdd(item) {
+  var store = await dbStore("readwrite");
+  return new Promise(function(res, rej) {
+    var r = store.add(item);
+    r.onsuccess = function() { res(r.result); };
+    r.onerror   = function() { rej(r.error); };
+  });
+}
+async function dbGetAll() {
+  var store = await dbStore("readonly");
+  return new Promise(function(res, rej) {
+    var r = store.getAll();
+    r.onsuccess = function() { res(r.result || []); };
+    r.onerror   = function() { rej(r.error); };
+  });
+}
+async function dbGet(id) {
+  var store = await dbStore("readonly");
+  return new Promise(function(res, rej) {
+    var r = store.get(id);
+    r.onsuccess = function() { res(r.result); };
+    r.onerror   = function() { rej(r.error); };
+  });
+}
+async function dbPut(item) {
+  var store = await dbStore("readwrite");
+  return new Promise(function(res, rej) {
+    var r = store.put(item);
+    r.onsuccess = function() { res(r.result); };
+    r.onerror   = function() { rej(r.error); };
+  });
+}
+async function dbDelete(id) {
+  var store = await dbStore("readwrite");
+  return new Promise(function(res, rej) {
+    var r = store.delete(id);
+    r.onsuccess = function() { res(); };
+    r.onerror   = function() { rej(r.error); };
+  });
+}
+
+$("saveHistoryBtn").addEventListener("click", async function() {
+  if (photos.length === 0) return;
+  var btn = $("saveHistoryBtn");
+  btn.disabled = true;
+  try {
+    var thumb = await makeThumbnail(photos[0].dataUrl, 200);
+    var entry = {
+      timestamp:  Date.now(),
+      model:      fields.model,
+      brand:      fields.brand,
+      item:       fields.item,
+      adjectives: fields.adjectives,
+      query:      $("query").value.trim(),
+      confidence: fields.confidence,
+      notes:      "",
+      hint:       $("hintText").value.trim(),
+      photoCount: photos.length,
+      thumb:      thumb
+    };
+    await dbAdd(entry);
+    btn.innerHTML = "&#10003; Saved";
+    btn.classList.add("saved-flash");
+    setTimeout(function() {
+      btn.innerHTML = "&#128190; Save to History";
+      btn.classList.remove("saved-flash");
+      btn.disabled = false;
+    }, 1600);
+  } catch (e) {
+    showError("Failed to save: " + (e.message || e));
+    btn.disabled = false;
+  }
+});
+
+function showView(name) {
+  hide($("view-main"));
+  hide($("view-history"));
+  hide($("view-history-detail"));
+  hide($("settings"));
+  if (name === "main") {
+    show($("view-main"));
+    $("subtitle").textContent = "Identify item \u2192 research prices";
+  } else if (name === "history") {
+    show($("view-history"));
+    $("subtitle").textContent = "Past identifications";
+    renderHistory();
+  } else if (name === "detail") {
+    show($("view-history-detail"));
+    $("subtitle").textContent = "Entry details";
+  }
+  window.scrollTo({ top: 0, behavior: "auto" });
+}
+$("historyBtn").addEventListener("click", function() { showView("history"); });
+$("histBackToMainBtn").addEventListener("click", function() { showView("main"); });
+$("histBackBtn").addEventListener("click", function() { showView("history"); });
+
+$("histSearch").addEventListener("input", renderHistory);
+
+async function renderHistory() {
+  var all;
+  try { all = await dbGetAll(); }
+  catch (e) {
+    $("histList").innerHTML = '<div class="error">Could not load history: ' + (e.message || e) + '</div>';
+    return;
+  }
+  all.sort(function(a, b) { return b.timestamp - a.timestamp; });
+  var q = $("histSearch").value.trim().toLowerCase();
+  var filtered = q
+    ? all.filter(function(e) {
+        return [e.model, e.brand, e.item, e.adjectives, e.query, e.notes, e.hint]
+          .filter(Boolean).join(" ").toLowerCase().indexOf(q) !== -1;
+      })
+    : all;
+
+  var list = $("histList");
+  list.innerHTML = "";
+  if (filtered.length === 0) {
+    show($("histEmpty"));
+    hide(list);
+    return;
+  }
+  hide($("histEmpty"));
+  show(list);
+
+  var groups = new Map();
+  for (var i = 0; i < filtered.length; i++) {
+    var entry = filtered[i];
+    var d = new Date(entry.timestamp);
+    var key = d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+    if (!groups.has(key)) groups.set(key, { label: formatDayLabel(d), items: [] });
+    groups.get(key).items.push(entry);
+  }
+  var keys = Array.from(groups.keys()).sort().reverse();
+  for (var j = 0; j < keys.length; j++) {
+    var head = document.createElement("div");
+    head.className = "hist-group-head";
+    head.textContent = groups.get(keys[j]).label;
+    list.appendChild(head);
+    var items = groups.get(keys[j]).items;
+    for (var k = 0; k < items.length; k++) {
+      list.appendChild(buildHistEntry(items[k]));
+    }
+  }
+}
+
+function formatDayLabel(d) {
+  var now = new Date();
+  var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  var day   = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  var diff = Math.round((today - day) / 86400000);
+  if (diff === 0) return "Today";
+  if (diff === 1) return "Yesterday";
+  if (diff < 7) return d.toLocaleDateString(undefined, { weekday: "long" });
+  var sameYear = d.getFullYear() === now.getFullYear();
+  return d.toLocaleDateString(undefined, sameYear
+    ? { weekday: "short", month: "short", day: "numeric" }
+    : { month: "short", day: "numeric", year: "numeric" });
+}
+
+function buildHistEntry(entry) {
+  var el = document.createElement("div");
+  el.className = "hist-entry";
+
+  var thumb = document.createElement("img");
+  thumb.className = "hist-thumb";
+  if (entry.thumb) thumb.src = entry.thumb;
+  thumb.alt = "";
+  el.appendChild(thumb);
+
+  var meta = document.createElement("div");
+  meta.className = "hist-meta";
+
+  var q = document.createElement("div");
+  q.className = "hist-query";
+  var hasNotes = entry.notes && entry.notes.trim();
+  if (hasNotes) {
+    var dot = document.createElement("span");
+    dot.className = "hist-dot";
+    dot.title = "Has notes/value";
+    q.appendChild(dot);
+  }
+  q.appendChild(document.createTextNode(entry.query || "(no query)"));
+  meta.appendChild(q);
+
+  if (hasNotes) {
+    var n = document.createElement("div");
+    n.className = "hist-notes";
+    n.textContent = entry.notes;
+    meta.appendChild(n);
+  }
+
+  var t = document.createElement("div");
+  t.className = "hist-time";
+  var d = new Date(entry.timestamp);
+  var timeStr = d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  t.textContent = timeStr + (entry.photoCount > 1 ? "  \u00b7  " + entry.photoCount + " photos" : "");
+  meta.appendChild(t);
+
+  el.appendChild(meta);
+  el.addEventListener("click", function() { openHistDetail(entry.id); });
+  return el;
+}
+
+async function openHistDetail(id) {
+  var entry = await dbGet(id);
+  if (!entry) { showView("history"); return; }
+  currentHistoryId = id;
+
+  if (entry.thumb) {
+    $("histDetailImg").src = entry.thumb;
+    show($("histDetailImg"));
+  } else {
+    hide($("histDetailImg"));
+  }
+
+  var meta = $("histDetailMeta");
+  meta.innerHTML = "";
+  var rows = [
+    ["Date",        new Date(entry.timestamp).toLocaleString()],
+    ["Photos",      entry.photoCount ? String(entry.photoCount) : ""],
+    ["Model",       entry.model],
+    ["Brand",       entry.brand],
+    ["Item",        entry.item],
+    ["Adjectives",  entry.adjectives],
+    ["Hint used",   entry.hint]
+  ];
+  for (var i = 0; i < rows.length; i++) {
+    var k = rows[i][0], v = rows[i][1];
+    if (!v) continue;
+    var row = document.createElement("div");
+    row.className = "kv";
+    var kEl = document.createElement("div");
+    kEl.className = "k"; kEl.textContent = k;
+    var vEl = document.createElement("div");
+    vEl.className = "v"; vEl.textContent = v;
+    row.appendChild(kEl); row.appendChild(vEl);
+    meta.appendChild(row);
+  }
+
+  $("histDetailQuery").value = entry.query || "";
+  $("histDetailNotes").value = entry.notes || "";
+  updateHistLinks();
+  showView("detail");
+}
+
+$("histDetailQuery").addEventListener("input", updateHistLinks);
+function updateHistLinks() {
+  var q = encodeURIComponent($("histDetailQuery").value.trim());
+  $("histLinkSold").href       = "https://www.ebay.com/sch/i.html?_nkw=" + q + "&LH_Sold=1&LH_Complete=1";
+  $("histLinkActive").href     = "https://www.ebay.com/sch/i.html?_nkw=" + q;
+  $("histLinkTerapeak").href   = "https://www.ebay.com/sh/research?marketplace=EBAY-US&keywords=" + q + "&dayRange=90&tabName=SOLD";
+  $("histLinkWorthpoint").href = "https://www.worthpoint.com/worthopedia/search?query=" + q;
+}
+
+$("histSaveBtn").addEventListener("click", async function() {
+  if (currentHistoryId == null) return;
+  var entry = await dbGet(currentHistoryId);
+  if (!entry) return;
+  entry.query = $("histDetailQuery").value.trim();
+  entry.notes = $("histDetailNotes").value.trim();
+  await dbPut(entry);
+  var btn = $("histSaveBtn");
+  btn.textContent = "\u2713 Saved";
+  btn.classList.add("saved-flash");
+  setTimeout(function() {
+    btn.textContent = "Save Changes";
+    btn.classList.remove("saved-flash");
+  }, 1500);
+});
+
+$("histDeleteBtn").addEventListener("click", async function() {
+  if (currentHistoryId == null) return;
+  if (!confirm("Delete this history entry? This cannot be undone.")) return;
+  await dbDelete(currentHistoryId);
+  currentHistoryId = null;
+  showView("history");
+});
+
+$("clear90Btn").addEventListener("click", async function() {
+  var all = await dbGetAll();
+  var cutoff = Date.now() - 90 * 86400000;
+  var old = all.filter(function(e) { return e.timestamp < cutoff; });
+  if (old.length === 0) { alert("No entries older than 90 days."); return; }
+  if (!confirm("Delete " + old.length + " " + (old.length === 1 ? "entry" : "entries") + " older than 90 days?")) return;
+  for (var i = 0; i < old.length; i++) { await dbDelete(old[i].id); }
+  alert("Deleted " + old.length + ".");
+  renderHistory();
+});
+
+$("exportBtn").addEventListener("click", async function() {
+  var all = await dbGetAll();
+  if (all.length === 0) { alert("Nothing to export."); return; }
+  var blob = new Blob([JSON.stringify(all, null, 2)], { type: "application/json" });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  var d = new Date();
+  var ymd = d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+  a.href = url;
+  a.download = "item-id-history-" + ymd + ".json";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+});
+
+$("importBtn").addEventListener("click", function() { $("importFile").click(); });
+$("importFile").addEventListener("change", async function(e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  try {
+    var text = await file.text();
+    var data = JSON.parse(text);
+    if (!Array.isArray(data)) throw new Error("File does not contain a history array.");
+    var count = 0;
+    for (var i = 0; i < data.length; i++) {
+      var entry = data[i];
+      var copy = {};
+      for (var k in entry) { if (k !== "id") copy[k] = entry[k]; }
+      if (!copy.timestamp) copy.timestamp = Date.now();
+      await dbAdd(copy);
+      count++;
+    }
+    alert("Imported " + count + " " + (count === 1 ? "entry" : "entries") + ".");
+    renderHistory();
+  } catch (err) {
+    alert("Import failed: " + (err.message || err));
+  }
+  $("importFile").value = "";
+});
+
+loadHintState();
+showView("main");
 </script>
 
 </body>
