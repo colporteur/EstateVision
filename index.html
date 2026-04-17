@@ -263,6 +263,11 @@
       <a class="btn worthpoint" id="linkWorthpoint" target="_blank" rel="noopener">WorthPoint</a>
     </div>
 
+    <div style="margin-top:16px;">
+      <label for="resultNotes">Notes / Value (optional)</label>
+      <textarea id="resultNotes" placeholder="e.g., '$25 comps on eBay, max buy $8'"></textarea>
+    </div>
+
     <button class="primary" id="saveHistoryBtn">&#128190; Save to History</button>
     <button id="startOverBtn">Start Over</button>
   </div>
@@ -636,6 +641,7 @@ $("startOverBtn").addEventListener("click", function() {
   hide($("result"));
   hide($("error"));
   $("query").value = "";
+  $("resultNotes").value = "";
   window.scrollTo({ top: 0, behavior: "smooth" });
 });
 
@@ -720,12 +726,13 @@ $("saveHistoryBtn").addEventListener("click", async function() {
       adjectives: fields.adjectives,
       query:      $("query").value.trim(),
       confidence: fields.confidence,
-      notes:      "",
+      notes:      $("resultNotes").value.trim(),
       hint:       $("hintText").value.trim(),
       photoCount: photos.length,
       thumb:      thumb
     };
     await dbAdd(entry);
+    $("resultNotes").value = "";
     btn.innerHTML = "&#10003; Saved";
     btn.classList.add("saved-flash");
     setTimeout(function() {
