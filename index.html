@@ -96,6 +96,12 @@
   .confidence.high   { background: #1f3a1f; color: #9fd89f; }
   .confidence.medium { background: #3a3a1f; color: #d8d89f; }
   .confidence.low    { background: #3a1f1f; color: #d89f9f; }
+  .model-badge {
+    display: inline-block; padding: 3px 10px; border-radius: 4px;
+    font-size: 0.75em; text-transform: uppercase; letter-spacing: 0.06em;
+    font-weight: 600;
+    background: #3a2a5a; color: #c8a8ff; margin-left: 4px;
+  }
   .icon-btn {
     background: none; border: none; font-size: 1.3em; padding: 6px 10px;
     width: auto; margin: 0; color: #888; cursor: pointer; border-radius: 6px;
@@ -251,6 +257,8 @@
     </div>
     <div class="kv hidden" id="notesRow"><div class="k">Notes</div><div class="v" id="rNotes">&mdash;</div></div>
 
+    <button id="askOpusBtn" style="margin-top:14px;">&#129504; Ask Opus (second opinion)</button>
+
     <div style="margin-top:16px;">
       <label for="query">Search Query (edit before searching)</label>
       <textarea id="query" spellcheck="false" autocapitalize="none" autocorrect="off"></textarea>
@@ -327,6 +335,8 @@ var LS_STICKY = "itemid.sticky";
 var photos = [];
 var fields = { model: "", brand: "", item: "", adjectives: "", notes: "", confidence: "" };
 var currentHistoryId = null;
+var lastModelUsed = null;
+var lastHintUsed  = "";
 
 function loadSettings() {
   $("apikey").value = localStorage.getItem(LS_KEY) || "";
@@ -422,6 +432,7 @@ function renderPhotos() {
 
 function updateIdentifyButton() {
   $("identifyBtn").disabled = photos.length === 0;
+  $("askOpusBtn").disabled  = photos.length === 0;
 }
 
 function downscale(file, maxDim) {
@@ -468,7 +479,8 @@ function makeThumbnail(dataUrl, size) {
   });
 }
 
-$("identifyBtn").addEventListener("click", identify);
+$("identifyBtn").addEventListener("click", function() { identify(); });
+$("askOpusBtn").addEventListener("click", function() { identify("claude-opus-4-6"); });
 
 var PROMPT_BASE = "You are identifying an item in a photo (or multiple photos of the same item) for resale research on eBay and WorthPoint.\n\n" +
 "Analyze the image(s) and return ONLY a JSON object (no markdown fences, no prose before or after). Use this exact schema:\n\n" +
@@ -494,7 +506,7 @@ function buildPrompt(hint) {
   return PROMPT_BASE;
 }
 
-async function identify() {
+async function identify(modelOverride) {
   var key = localStorage.getItem(LS_KEY);
   if (!key) {
     showError("Set your Anthropic API key in \u2699 first.");
@@ -503,18 +515,24 @@ async function identify() {
   }
   if (photos.length === 0) return;
 
+  var isSecondOpinion = !!modelOverride;
+
   hide($("error"));
-  hide($("result"));
+  if (!isSecondOpinion) hide($("result"));
   show($("loading"));
   $("identifyBtn").disabled = true;
+  $("askOpusBtn").disabled = true;
 
   try {
-    var model = localStorage.getItem(LS_MODEL) || "claude-sonnet-4-6";
-    var hint = $("hintText").value;
+    var model = modelOverride || localStorage.getItem(LS_MODEL) || "claude-sonnet-4-6";
+    // For second opinion, reuse the hint from the original identify (even if cleared from the input).
+    var hint = isSecondOpinion ? lastHintUsed : $("hintText").value;
     var data = await callClaude(key, model, photos, hint);
+    lastModelUsed = model;
+    lastHintUsed  = hint;
     populateResult(data);
     show($("result"));
-    if (!$("stickyHint").checked) $("hintText").value = "";
+    if (!isSecondOpinion && !$("stickyHint").checked) $("hintText").value = "";
     var sb = $("saveHistoryBtn");
     sb.innerHTML = "&#128190; Save to History";
     sb.classList.remove("saved-flash");
@@ -588,11 +606,14 @@ function renderFields() {
   else { hide($("notesRow")); }
   var conf = fields.confidence;
   var confEl = $("confidenceRow");
+  var html = "";
   if (conf === "high" || conf === "medium" || conf === "low") {
-    confEl.innerHTML = '<span class="confidence ' + conf + '">Confidence: ' + conf + "</span>";
-  } else {
-    confEl.innerHTML = "";
+    html += '<span class="confidence ' + conf + '">Confidence: ' + conf + "</span>";
   }
+  if (lastModelUsed && lastModelUsed.indexOf("opus") !== -1) {
+    html += '<span class="model-badge">via Opus</span>';
+  }
+  confEl.innerHTML = html;
 }
 
 function rebuildQuery() {
@@ -635,6 +656,8 @@ function updateLinks() {
 $("startOverBtn").addEventListener("click", function() {
   photos = [];
   fields = { model: "", brand: "", item: "", adjectives: "", notes: "", confidence: "" };
+  lastModelUsed = null;
+  lastHintUsed  = "";
   if (!$("stickyHint").checked) $("hintText").value = "";
   renderPhotos();
   updateIdentifyButton();
