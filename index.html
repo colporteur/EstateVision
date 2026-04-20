@@ -123,6 +123,15 @@
     line-height: 1;
   }
   .photo .x-btn:active { background: rgba(200,0,0,0.8); }
+  .photo .save-btn {
+    position: absolute; top: 4px; left: 4px;
+    background: rgba(0,0,0,0.75); color: white; border: none;
+    width: 26px; height: 26px; border-radius: 13px;
+    font-size: 15px; padding: 0; margin: 0;
+    display: flex; align-items: center; justify-content: center;
+    line-height: 1;
+  }
+  .photo .save-btn:active { background: rgba(59,130,246,0.85); }
   .photo-count { font-size: 0.8em; color: #888; margin: 4px 0 8px; }
 
   .hint-label-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
@@ -299,7 +308,10 @@
   <div id="photoGridSection" class="section hidden">
     <div class="photo-count" id="photoCount"></div>
     <div id="photoGrid" class="photos"></div>
-    <button id="clearPhotosBtn">Clear All Photos</button>
+    <div class="row">
+      <button id="savePhotosBtn">&#128190; Save All to Phone</button>
+      <button id="clearPhotosBtn">Clear All Photos</button>
+    </div>
   </div>
 
   <div class="section">
@@ -348,9 +360,8 @@
       <div class="est-cell">
         <div class="est-label">Est. Value</div>
         <div class="est-buttons-row">
-          <button class="est-mini-btn" id="reduce10" type="button">&minus;10%</button>
-          <button class="est-mini-btn" id="reduce20" type="button">&minus;20%</button>
-          <button class="est-mini-btn" id="reduce30" type="button">&minus;30%</button>
+          <button class="est-mini-btn" id="adjustMinus" type="button">&minus;10%</button>
+          <button class="est-mini-btn" id="adjustPlus"  type="button">+10%</button>
         </div>
         <div class="est-value-wrap">
           <span class="est-prefix">$</span><input type="number" id="estValue" step="0.01" min="0" inputmode="decimal">
@@ -571,6 +582,7 @@ async function handleFiles(fileList) {
     if (photos.length >= 10) { showError("Max 10 photos per item."); break; }
     try {
       var p = await downscale(files[i], 1280);
+      p.original = files[i];  // keep full-res File for "Save to Phone"
       photos.push(p);
     } catch (e) {
       showError("Couldn't read an image: " + e.message);
@@ -603,6 +615,17 @@ function renderPhotos() {
     var img = document.createElement("img");
     img.src = p.dataUrl; img.alt = "";
     cell.appendChild(img);
+
+    var s = document.createElement("button");
+    s.className = "save-btn";
+    s.innerHTML = "&#8681;";  // downward arrow
+    s.setAttribute("aria-label", "Save photo to phone");
+    s.addEventListener("click", function(e) {
+      e.stopPropagation();
+      savePhotosToDevice([idx]);
+    });
+    cell.appendChild(s);
+
     var x = document.createElement("button");
     x.className = "x-btn";
     x.innerHTML = "&times;";
@@ -666,6 +689,67 @@ function makeThumbnail(dataUrl, size) {
     img.src = dataUrl;
   });
 }
+
+/* --- Save to device (Photos app via Web Share) --- */
+
+function dataUrlToFile(dataUrl, name) {
+  var parts = dataUrl.split(",");
+  var mime = (parts[0].match(/:(.*?);/) || [])[1] || "image/jpeg";
+  var bstr = atob(parts[1]);
+  var n = bstr.length;
+  var u8 = new Uint8Array(n);
+  while (n--) { u8[n] = bstr.charCodeAt(n); }
+  return new File([u8], name, { type: mime });
+}
+
+function fileForPhoto(p, fallbackIdx) {
+  if (p.original instanceof File) return p.original;
+  var ts = new Date();
+  var pad = function(v) { return String(v).padStart(2, "0"); };
+  var name = "item-id-" + ts.getFullYear() + pad(ts.getMonth()+1) + pad(ts.getDate()) + "-" +
+             pad(ts.getHours()) + pad(ts.getMinutes()) + pad(ts.getSeconds()) +
+             "-" + (fallbackIdx + 1) + ".jpg";
+  return dataUrlToFile(p.dataUrl, name);
+}
+
+async function savePhotosToDevice(indices) {
+  if (photos.length === 0) return;
+  var files = indices.map(function(i) { return fileForPhoto(photos[i], i); });
+  if (files.length === 0) return;
+
+  // Preferred: Web Share API with files — pops the native share sheet, user taps "Save Image".
+  if (navigator.canShare && navigator.canShare({ files: files })) {
+    try {
+      await navigator.share({ files: files, title: "Item ID photos" });
+    } catch (e) {
+      if (e && e.name !== "AbortError") {
+        showError("Save failed: " + (e.message || e));
+      }
+    }
+    return;
+  }
+
+  // Fallback: download each file. Android will put them in Downloads; iOS will open in tab.
+  for (var i = 0; i < files.length; i++) {
+    var url = URL.createObjectURL(files[i]);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = files[i].name || ("item-id-photo-" + (i+1) + ".jpg");
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    (function(u) { setTimeout(function() { URL.revokeObjectURL(u); }, 1000); })(url);
+  }
+  if (!("share" in navigator)) {
+    showError("Your browser doesn't support one-tap Save to Photos. The file was downloaded instead \u2014 on iOS, long-press the image and tap \u201cSave to Photos\u201d.");
+  }
+}
+
+$("savePhotosBtn").addEventListener("click", function() {
+  if (photos.length === 0) return;
+  var idxs = photos.map(function(_, i) { return i; });
+  savePhotosToDevice(idxs);
+});
 
 $("identifyBtn").addEventListener("click", function() { identify(); });
 $("askOpusBtn").addEventListener("click", function() { identify("claude-opus-4-6"); });
@@ -933,17 +1017,16 @@ function updateMaxBuy() {
 $("estValue").addEventListener("input", updateMaxBuy);
 $("estStr").addEventListener("input",   updateMaxBuy);
 
-/* Reduce value buttons — compound (each press cuts current value by pct) */
-function reduceValue(pct) {
+/* Value +/- 10% buttons — compound (each press multiplies by 1 +/- 0.10) */
+function adjustValue(pctDelta) {
   var cur = parseFloat($("estValue").value);
   if (!isFinite(cur) || cur <= 0) return;
-  var reduced = cur * (1 - pct / 100);
-  $("estValue").value = reduced.toFixed(2);
+  var adjusted = cur * (1 + pctDelta / 100);
+  $("estValue").value = adjusted.toFixed(2);
   updateMaxBuy();
 }
-$("reduce10").addEventListener("click", function() { reduceValue(10); });
-$("reduce20").addEventListener("click", function() { reduceValue(20); });
-$("reduce30").addEventListener("click", function() { reduceValue(30); });
+$("adjustMinus").addEventListener("click", function() { adjustValue(-10); });
+$("adjustPlus").addEventListener("click",  function() { adjustValue(10);  });
 
 /* STR tier-step buttons — jump STR to the next tier's threshold up or down */
 function stepStr(direction) {
