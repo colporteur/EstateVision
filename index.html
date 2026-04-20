@@ -242,8 +242,25 @@
   .group-item-nums {
     font-size: 0.78em; color: #aaa; margin-top: 3px; word-break: break-word;
   }
-  .group-item-nums .num-max { color: #9fd89f; font-weight: 600; }
-  .group-item-nums .num-neg { color: #d89f9f; font-weight: 600; }
+  .group-item-nums .num-max  { color: #9fd89f; font-weight: 600; }
+  .group-item-nums .num-neg  { color: #d89f9f; font-weight: 600; }
+  .group-item-nums .num-cost { color: #f5d87a; font-weight: 600; }
+
+  /* Sort toggle (group detail) */
+  .sort-toggle {
+    display: flex; gap: 6px; margin: 4px 0 10px;
+    background: #1a1a1a; border: 1px solid #333; border-radius: 8px; padding: 4px;
+  }
+  .sort-toggle button {
+    flex: 1; margin: 0; padding: 8px 10px; font-size: 0.85em;
+    background: transparent; border: 1px solid transparent; color: #bbb;
+    border-radius: 6px;
+  }
+  .sort-toggle button.active {
+    background: #2a3a5a; border-color: #3b82f6; color: #fff;
+  }
+  .sort-toggle button:active { background: #2a2a2a; }
+  .sort-toggle button.active:active { background: #2a3a5a; }
   .group-item-x {
     background: #2a2a2a; border: 1px solid #444; color: #aaa;
     width: 36px; height: 36px; border-radius: 18px; padding: 0;
@@ -595,7 +612,10 @@
     <input type="text" id="groupNameInput" maxlength="40" autocomplete="off" spellcheck="false">
     <button class="set-active-btn" id="groupSetActiveBtn" type="button">Make active</button>
   </div>
-  <div class="footnote" id="groupSortNote" style="margin-top:-4px;">Sorted by Max Buy (highest first)</div>
+  <div class="sort-toggle" id="groupSortToggle">
+    <button type="button" id="sortByMaxBuyBtn" class="active">Max Buy &#9660;</button>
+    <button type="button" id="sortByCostBtn">Cost &#9660;</button>
+  </div>
   <div id="groupItemsList"></div>
   <div id="groupEmpty" class="hidden" style="text-align:center; color:#666; padding: 30px 16px;">
     No items in this group yet.
@@ -1619,6 +1639,7 @@ $("saveHistoryBtn").addEventListener("click", async function() {
 });
 
 var currentGroupId = null;
+var groupSortMode = "maxBuy"; // "maxBuy" (default) or "cost", both descending
 
 function showView(name) {
   hide($("view-main"));
@@ -1700,14 +1721,22 @@ async function renderGroupDetail(groupId) {
     setActiveBtn.disabled = false;
   }
 
+  // Reflect current sort mode in the toggle
+  $("sortByMaxBuyBtn").classList.toggle("active", groupSortMode === "maxBuy");
+  $("sortByCostBtn").classList.toggle("active",   groupSortMode === "cost");
+
   var items = (g.items || []).slice();
-  // Sort by Max Buy descending (nulls last)
+  // Sort descending by the selected key; nulls always last.
+  var keyOf = function(it) {
+    if (groupSortMode === "cost") return (it.cost != null && isFinite(it.cost)) ? it.cost : null;
+    return (it.maxBuyNum != null && isFinite(it.maxBuyNum)) ? it.maxBuyNum : null;
+  };
   items.sort(function(a, b) {
-    var am = a.maxBuyNum, bm = b.maxBuyNum;
-    if (am == null && bm == null) return 0;
-    if (am == null) return 1;
-    if (bm == null) return -1;
-    return bm - am;
+    var ak = keyOf(a), bk = keyOf(b);
+    if (ak == null && bk == null) return 0;
+    if (ak == null) return 1;
+    if (bk == null) return -1;
+    return bk - ak;
   });
 
   var list = $("groupItemsList");
@@ -1729,7 +1758,7 @@ async function renderGroupDetail(groupId) {
     if (it.value != null)      parts.push("Sale " + fmtDollar(it.value));
     if (it.str != null)        parts.push("STR " + it.str + "%");
     if (it.maxBuyText)         parts.push('<span class="num-max">Max ' + escapeHtml(it.maxBuyText) + '</span>');
-    if (it.cost != null)       parts.push("Cost " + fmtDollar(it.cost));
+    if (it.cost != null)       parts.push('<span class="num-cost">Cost ' + escapeHtml(fmtDollar(it.cost)) + '</span>');
     if (it.taxBpPct != null)   parts.push("Tax+BP " + Number(it.taxBpPct) + "%");
     if (it.profitText) {
       var cls = (it.profitNum != null && it.profitNum < 0) ? "num-neg" : "num-max";
@@ -1775,6 +1804,17 @@ $("groupSetActiveBtn").addEventListener("click", function() {
   if (currentGroupId == null) return;
   setActiveGroupId(currentGroupId);
   updateSaveToGroupLabel();
+  renderGroupDetail(currentGroupId);
+});
+
+$("sortByMaxBuyBtn").addEventListener("click", function() {
+  if (groupSortMode === "maxBuy") return;
+  groupSortMode = "maxBuy";
+  renderGroupDetail(currentGroupId);
+});
+$("sortByCostBtn").addEventListener("click", function() {
+  if (groupSortMode === "cost") return;
+  groupSortMode = "cost";
   renderGroupDetail(currentGroupId);
 });
 
