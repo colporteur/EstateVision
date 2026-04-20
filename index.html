@@ -49,7 +49,7 @@
   .btn.terapeak   { background: #2e1f4a; border-color: #452f70; }
   .btn.worthpoint { background: #4a2f1f; border-color: #70452f; }
   .btn.danger, button.danger { background: #3a1f1f; border-color: #5a2f2f; color: #ffaaaa; }
-  input[type="text"], input[type="password"], input[type="search"], textarea, select {
+  input[type="text"], input[type="password"], input[type="search"], input[type="number"], textarea, select {
     width: 100%;
     padding: 12px;
     font-size: 1em;
@@ -166,6 +166,61 @@
     width: auto; display: inline-block; padding: 8px 14px; font-size: 0.9em; margin: 0 0 8px 0;
   }
   .saved-flash { background: #1f3a1f !important; border-color: #305030 !important; }
+
+  /* Word toggle pills */
+  .tk-group { padding: 10px 0; border-bottom: 1px solid #2a2a2a; }
+  .tk-group:last-of-type { border-bottom: none; }
+  .tk-group .k { color: #888; font-size: 0.75em; text-transform: uppercase; letter-spacing: 0.06em; }
+  .tk-row { margin-top: 6px; }
+  .tk-row .empty { color: #555; font-size: 0.9em; font-style: italic; }
+  .word-toggle {
+    display: inline-block; width: auto;
+    padding: 7px 13px; margin: 3px 4px 3px 0;
+    background: #0f0f0f; color: #666;
+    border: 1px solid #333; border-radius: 18px;
+    font-size: 0.92em; font-family: inherit;
+    cursor: pointer; user-select: none;
+  }
+  .word-toggle.active {
+    background: #3b82f6; color: white;
+    border-color: #3b82f6; font-weight: 600;
+  }
+  .word-toggle:active { opacity: 0.8; }
+
+  /* Estimates bar */
+  .estimates-bar {
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    gap: 6px; margin: 10px 0 12px;
+  }
+  .est-cell {
+    background: #222; border: 1px solid #333; border-radius: 8px;
+    padding: 8px 6px; text-align: center;
+  }
+  .est-cell.derived { background: #1a2a1a; border-color: #2a4a2a; }
+  .est-label { font-size: 0.68em; color: #888; text-transform: uppercase; letter-spacing: 0.06em; }
+  .est-value-wrap {
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1em; font-weight: 600; color: #e8e8e8; margin-top: 3px;
+  }
+  .est-value-wrap input {
+    background: transparent; border: none; text-align: center;
+    padding: 2px; margin: 0; width: 64px; color: #e8e8e8;
+    font-size: 1em; font-weight: 600;
+  }
+  .est-value-wrap input:focus { outline: 1px solid #3b82f6; border-radius: 4px; background: #0f0f0f; }
+  .est-prefix, .est-suffix { color: #888; font-weight: 400; }
+  .est-derived { font-size: 1.1em; font-weight: 600; color: #9fd89f; margin-top: 3px; }
+  .est-roi-note { font-size: 0.65em; color: #6f9f6f; margin-top: 1px; font-weight: 400; }
+
+  /* Settings: ROI matrix */
+  .settings-subhead {
+    font-size: 0.8em; color: #888; text-transform: uppercase; letter-spacing: 0.06em;
+    margin: 18px 0 8px; padding-bottom: 4px; border-bottom: 1px solid #2a2a2a;
+  }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .two-col > div { margin-bottom: 6px; }
+  .two-col input { margin-bottom: 0; padding: 10px; }
+  .two-col label { margin-bottom: 3px; }
 </style>
 </head>
 <body>
@@ -188,7 +243,27 @@
     <option value="claude-opus-4-6">Opus 4.6 (most accurate, costlier)</option>
     <option value="claude-haiku-4-5-20251001">Haiku 4.5 (fastest, cheapest)</option>
   </select>
-  <div class="row">
+
+  <div class="settings-subhead">ROI Matrix</div>
+  <div class="footnote" style="margin-top:0; margin-bottom:8px;">Sell-through rate (STR) tiers &rarr; ROI target used for Max Buy.</div>
+  <div class="two-col">
+    <div><label>Tier 1: STR &ge; (%)</label><input type="number" id="roiTier1Str" min="0" max="100" step="1"></div>
+    <div><label>ROI target (%)</label><input type="number" id="roiTier1Roi" min="0" step="1"></div>
+    <div><label>Tier 2: STR &ge; (%)</label><input type="number" id="roiTier2Str" min="0" max="100" step="1"></div>
+    <div><label>ROI target (%)</label><input type="number" id="roiTier2Roi" min="0" step="1"></div>
+    <div><label>Tier 3 (below Tier 2)</label><input type="text" value="catch-all" disabled></div>
+    <div><label>ROI target (%)</label><input type="number" id="roiTier3Roi" min="0" step="1"></div>
+  </div>
+
+  <div class="settings-subhead">eBay Fees</div>
+  <div class="two-col">
+    <div><label>Final Value Fee (%)</label><input type="number" id="feeFvf" step="0.01"></div>
+    <div><label>Promoted Listings (%)</label><input type="number" id="feePromo" step="0.01"></div>
+    <div><label>Per-order fee ($)</label><input type="number" id="feePerOrder" step="0.01"></div>
+    <div></div>
+  </div>
+
+  <div class="row" style="margin-top:12px;">
     <button class="primary" id="saveSettingsBtn">Save</button>
     <button id="closeSettingsBtn">Close</button>
   </div>
@@ -234,34 +309,44 @@
   <div id="result" class="section hidden">
     <div id="confidenceRow" style="margin-bottom:10px;"></div>
 
-    <div class="kv" id="kvModel">
-      <button class="x-mini" data-field="model" title="Remove">&times;</button>
-      <div class="k">Model</div>
-      <div class="v" id="rModel">&mdash;</div>
-    </div>
-    <div class="kv" id="kvBrand">
-      <button class="x-mini" data-field="brand" title="Remove">&times;</button>
-      <div class="k">Brand</div>
-      <div class="v" id="rBrand">&mdash;</div>
-    </div>
-    <div class="kv" id="kvItem">
-      <button class="x-mini" data-field="item" title="Remove">&times;</button>
-      <div class="k">Item</div>
-      <div class="v" id="rItem">&mdash;</div>
-    </div>
-    <div class="kv" id="kvAdj">
-      <button class="x-mini" data-field="adjectives" title="Remove">&times;</button>
-      <div class="k">Adjectives</div>
-      <div class="v" id="rAdj">&mdash;</div>
-      <button class="inline-btn" id="keepFirstAdjBtn">Keep 1st only</button>
-    </div>
+    <div class="footnote" style="margin-bottom:6px;">Tap words to include / exclude from search. Model, Brand, Item default on; Adjectives off.</div>
+
+    <div class="tk-group" id="tkModel"></div>
+    <div class="tk-group" id="tkBrand"></div>
+    <div class="tk-group" id="tkItem"></div>
+    <div class="tk-group" id="tkAdj"></div>
     <div class="kv hidden" id="notesRow"><div class="k">Notes</div><div class="v" id="rNotes">&mdash;</div></div>
 
     <button id="askOpusBtn" style="margin-top:14px;">&#129504; Ask Opus (second opinion)</button>
 
     <div style="margin-top:16px;">
+      <label for="negTerms">Exclude (negative terms)</label>
+      <input type="text" id="negTerms" placeholder="e.g., broken parts case" spellcheck="false" autocapitalize="none" autocorrect="off">
+    </div>
+
+    <div style="margin-top:8px;">
       <label for="query">Search Query (edit before searching)</label>
       <textarea id="query" spellcheck="false" autocapitalize="none" autocorrect="off"></textarea>
+    </div>
+
+    <div class="estimates-bar">
+      <div class="est-cell">
+        <div class="est-label">Est. Value</div>
+        <div class="est-value-wrap">
+          <span class="est-prefix">$</span><input type="number" id="estValue" step="0.01" min="0" inputmode="decimal">
+        </div>
+      </div>
+      <div class="est-cell">
+        <div class="est-label">Sell-Through</div>
+        <div class="est-value-wrap">
+          <input type="number" id="estStr" step="1" min="0" max="100" inputmode="numeric"><span class="est-suffix">%</span>
+        </div>
+      </div>
+      <div class="est-cell derived">
+        <div class="est-label">Max Buy</div>
+        <div class="est-derived" id="estMaxBuy">&mdash;</div>
+        <div class="est-roi-note" id="estRoiNote">&nbsp;</div>
+      </div>
     </div>
 
     <div class="section">
@@ -331,24 +416,80 @@ var LS_KEY    = "itemid.apikey";
 var LS_MODEL  = "itemid.model";
 var LS_HINT   = "itemid.hint";
 var LS_STICKY = "itemid.sticky";
+var LS_ROI    = "itemid.roiMatrix";
+
+var DEFAULT_ROI = {
+  tiers: [
+    { str: 60, roi: 50  },
+    { str: 30, roi: 100 },
+    { str: 0,  roi: 200 }
+  ],
+  fees: { fvf: 13.25, promoted: 5, per_order: 0.30 }
+};
+
+function defaultFields() {
+  return {
+    modelTokens: [], modelActive: [],
+    brandTokens: [], brandActive: [],
+    itemTokens:  [], itemActive:  [],
+    adjTokens:   [], adjActive:   [],
+    notes: "", confidence: "",
+    value: null, str: null
+  };
+}
 
 var photos = [];
-var fields = { model: "", brand: "", item: "", adjectives: "", notes: "", confidence: "" };
+var fields = defaultFields();
 var currentHistoryId = null;
 var lastModelUsed = null;
 var lastHintUsed  = "";
 
+function getRoiMatrix() {
+  try {
+    var raw = localStorage.getItem(LS_ROI);
+    if (!raw) return JSON.parse(JSON.stringify(DEFAULT_ROI));
+    var m = JSON.parse(raw);
+    if (!m || !m.tiers || !m.fees) return JSON.parse(JSON.stringify(DEFAULT_ROI));
+    return m;
+  } catch (e) { return JSON.parse(JSON.stringify(DEFAULT_ROI)); }
+}
 function loadSettings() {
   $("apikey").value = localStorage.getItem(LS_KEY) || "";
   $("model").value  = localStorage.getItem(LS_MODEL) || "claude-sonnet-4-6";
+  var m = getRoiMatrix();
+  $("roiTier1Str").value = m.tiers[0].str;
+  $("roiTier1Roi").value = m.tiers[0].roi;
+  $("roiTier2Str").value = m.tiers[1].str;
+  $("roiTier2Roi").value = m.tiers[1].roi;
+  $("roiTier3Roi").value = m.tiers[2].roi;
+  $("feeFvf").value      = m.fees.fvf;
+  $("feePromo").value    = m.fees.promoted;
+  $("feePerOrder").value = m.fees.per_order;
 }
 function saveSettings() {
   localStorage.setItem(LS_KEY, $("apikey").value.trim());
   localStorage.setItem(LS_MODEL, $("model").value);
+  var matrix = {
+    tiers: [
+      { str: numOr($("roiTier1Str").value, 60), roi: numOr($("roiTier1Roi").value, 50)  },
+      { str: numOr($("roiTier2Str").value, 30), roi: numOr($("roiTier2Roi").value, 100) },
+      { str: 0,                                  roi: numOr($("roiTier3Roi").value, 200) }
+    ],
+    fees: {
+      fvf:       numOr($("feeFvf").value,      13.25),
+      promoted:  numOr($("feePromo").value,    5),
+      per_order: numOr($("feePerOrder").value, 0.30)
+    }
+  };
+  localStorage.setItem(LS_ROI, JSON.stringify(matrix));
+}
+function numOr(v, fallback) {
+  var n = Number(v);
+  return isFinite(n) ? n : fallback;
 }
 $("settingsBtn").addEventListener("click", function() { loadSettings(); show($("settings")); });
 $("closeSettingsBtn").addEventListener("click", function() { hide($("settings")); });
-$("saveSettingsBtn").addEventListener("click", function() { saveSettings(); hide($("settings")); });
+$("saveSettingsBtn").addEventListener("click", function() { saveSettings(); hide($("settings")); updateMaxBuy(); });
 if (!localStorage.getItem(LS_KEY)) { loadSettings(); show($("settings")); }
 
 function loadHintState() {
@@ -490,12 +631,15 @@ var PROMPT_BASE = "You are identifying an item in a photo (or multiple photos of
 "  \"item\": \"<what the item is (noun phrase, 2-4 words, e.g. 'portable cassette player')>\",\n" +
 "  \"adjectives\": \"<2-4 core descriptive terms useful for search: color, material, size, era, edition, configuration. Space-separated, no commas>\",\n" +
 "  \"confidence\": \"<high | medium | low>\",\n" +
-"  \"notes\": \"<one short sentence flagging anything uncertain worth user verification, or empty string>\"\n" +
+"  \"notes\": \"<one short sentence flagging anything uncertain worth user verification, or empty string>\",\n" +
+"  \"estimated_value_usd\": <number: your best estimate of typical used/resale price on eBay in USD, or null if you truly cannot estimate>,\n" +
+"  \"sell_through_pct\": <integer 0-100: your best estimate of eBay sell-through rate (% of listings that sell within 90 days). High demand commodities ~70-85, common collectibles ~30-50, obscure/niche ~10-25. null if you truly cannot estimate>\n" +
 "}\n\n" +
 "Rules:\n" +
 "- Be specific with model/brand when visibly identifiable; leave empty if not confident.\n" +
 "- Do not invent details. Low confidence is acceptable.\n" +
 "- The output fields will be assembled in this order for an eBay search: MODEL BRAND ITEM ADJECTIVES. Keep each field clean, tight, no filler words.\n" +
+"- For estimated_value_usd and sell_through_pct, give your best single-number estimate based on the item's condition as shown and typical US secondhand market. Prefer giving a number over null; these are starting points the user will verify and edit.\n" +
 "- Return JSON and nothing else.";
 
 function buildPrompt(hint) {
@@ -586,26 +730,41 @@ function parseJson(text) {
   catch (e) { throw new Error("Could not parse model response as JSON:\n" + text.slice(0, 400)); }
 }
 
+function tokenize(s) {
+  return String(s || "").trim().split(/\s+/).filter(Boolean);
+}
+function numOrNull(v) {
+  if (v == null || v === "") return null;
+  var n = Number(v);
+  return isFinite(n) ? n : null;
+}
+
 function populateResult(d) {
-  fields.model      = String(d.model || "").trim();
-  fields.brand      = String(d.brand || "").trim();
-  fields.item       = String(d.item  || "").trim();
-  fields.adjectives = String(d.adjectives || "").trim();
-  fields.notes      = String(d.notes || "").trim();
-  fields.confidence = String(d.confidence || "").toLowerCase();
+  fields.modelTokens = tokenize(d.model);
+  fields.modelActive = fields.modelTokens.map(function() { return true; });
+  fields.brandTokens = tokenize(d.brand);
+  fields.brandActive = fields.brandTokens.map(function() { return true; });
+  fields.itemTokens  = tokenize(d.item);
+  fields.itemActive  = fields.itemTokens.map(function() { return true; });
+  fields.adjTokens   = tokenize(d.adjectives);
+  fields.adjActive   = fields.adjTokens.map(function() { return false; });  // adjectives OFF by default
+  fields.notes       = String(d.notes || "").trim();
+  fields.confidence  = String(d.confidence || "").toLowerCase();
+  fields.value       = numOrNull(d.estimated_value_usd);
+  fields.str         = numOrNull(d.sell_through_pct);
   renderFields();
+  renderEstimatesBar();
   rebuildQuery();
 }
 
 function renderFields() {
-  $("rModel").textContent = fields.model || "\u2014";
-  $("rBrand").textContent = fields.brand || "\u2014";
-  $("rItem").textContent  = fields.item  || "\u2014";
-  $("rAdj").textContent   = fields.adjectives || "\u2014";
+  renderToggleGroup("tkModel", "Model",      fields.modelTokens, fields.modelActive);
+  renderToggleGroup("tkBrand", "Brand",      fields.brandTokens, fields.brandActive);
+  renderToggleGroup("tkItem",  "Item",       fields.itemTokens,  fields.itemActive);
+  renderToggleGroup("tkAdj",   "Adjectives", fields.adjTokens,   fields.adjActive);
   if (fields.notes) { $("rNotes").textContent = fields.notes; show($("notesRow")); }
   else { hide($("notesRow")); }
   var conf = fields.confidence;
-  var confEl = $("confidenceRow");
   var html = "";
   if (conf === "high" || conf === "medium" || conf === "low") {
     html += '<span class="confidence ' + conf + '">Confidence: ' + conf + "</span>";
@@ -613,38 +772,64 @@ function renderFields() {
   if (lastModelUsed && lastModelUsed.indexOf("opus") !== -1) {
     html += '<span class="model-badge">via Opus</span>';
   }
-  confEl.innerHTML = html;
+  $("confidenceRow").innerHTML = html;
+}
+
+function renderToggleGroup(containerId, label, tokens, active) {
+  var el = $(containerId);
+  el.innerHTML = "";
+  var k = document.createElement("div");
+  k.className = "k"; k.textContent = label;
+  el.appendChild(k);
+  var row = document.createElement("div");
+  row.className = "tk-row";
+  if (tokens.length === 0) {
+    var em = document.createElement("span");
+    em.className = "empty";
+    em.textContent = "(none identified)";
+    row.appendChild(em);
+  } else {
+    tokens.forEach(function(word, idx) {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "word-toggle" + (active[idx] ? " active" : "");
+      btn.textContent = word;
+      btn.addEventListener("click", function() {
+        active[idx] = !active[idx];
+        btn.classList.toggle("active", active[idx]);
+        rebuildQuery();
+      });
+      row.appendChild(btn);
+    });
+  }
+  el.appendChild(row);
+}
+
+function activeTokens(tokens, active) {
+  var out = [];
+  for (var i = 0; i < tokens.length; i++) if (active[i]) out.push(tokens[i]);
+  return out;
 }
 
 function rebuildQuery() {
   var parts = [];
-  if (fields.model)      parts.push(fields.model);
-  if (fields.brand)      parts.push(fields.brand);
-  if (fields.item)       parts.push(fields.item);
-  if (fields.adjectives) parts.push(fields.adjectives);
+  parts = parts.concat(activeTokens(fields.modelTokens, fields.modelActive));
+  parts = parts.concat(activeTokens(fields.brandTokens, fields.brandActive));
+  parts = parts.concat(activeTokens(fields.itemTokens,  fields.itemActive));
+  parts = parts.concat(activeTokens(fields.adjTokens,   fields.adjActive));
+  var neg = ($("negTerms") && $("negTerms").value || "").trim();
+  if (neg) {
+    neg.split(/\s+/).filter(Boolean).forEach(function(w) {
+      parts.push(w.charAt(0) === "-" ? w : "-" + w);
+    });
+  }
   $("query").value = parts.join(" ").replace(/\s+/g, " ").trim();
   updateLinks();
 }
 
-document.querySelectorAll("#result .x-mini").forEach(function(btn) {
-  btn.addEventListener("click", function() {
-    var f = btn.dataset.field;
-    if (f && (f in fields)) {
-      fields[f] = "";
-      renderFields();
-      rebuildQuery();
-    }
-  });
-});
-
-$("keepFirstAdjBtn").addEventListener("click", function() {
-  var first = (fields.adjectives || "").split(/\s+/).filter(Boolean)[0] || "";
-  fields.adjectives = first;
-  renderFields();
-  rebuildQuery();
-});
-
+$("negTerms").addEventListener("input", rebuildQuery);
 $("query").addEventListener("input", updateLinks);
+
 function updateLinks() {
   var q = encodeURIComponent($("query").value.trim());
   $("linkSold").href       = "https://www.ebay.com/sch/i.html?_nkw=" + q + "&LH_Sold=1&LH_Complete=1";
@@ -653,12 +838,65 @@ function updateLinks() {
   $("linkWorthpoint").href = "https://www.worthpoint.com/inventory/search?categories=&query=" + q;
 }
 
+/* Estimates bar: Value, STR, Max Buy */
+function renderEstimatesBar() {
+  $("estValue").value = fields.value != null ? fields.value : "";
+  $("estStr").value   = fields.str   != null ? fields.str   : "";
+  updateMaxBuy();
+}
+function roiForStr(str) {
+  var m = getRoiMatrix();
+  if (str == null || !isFinite(str)) return m.tiers[m.tiers.length - 1].roi;
+  for (var i = 0; i < m.tiers.length; i++) {
+    if (str >= m.tiers[i].str) return m.tiers[i].roi;
+  }
+  return m.tiers[m.tiers.length - 1].roi;
+}
+function updateMaxBuy() {
+  var vRaw = $("estValue").value;
+  var sRaw = $("estStr").value;
+  var value = vRaw === "" ? null : Number(vRaw);
+  var str   = sRaw === "" ? null : Number(sRaw);
+  fields.value = (value != null && isFinite(value)) ? value : null;
+  fields.str   = (str   != null && isFinite(str))   ? str   : null;
+
+  var mb = $("estMaxBuy");
+  var note = $("estRoiNote");
+  if (fields.value == null || fields.value <= 0) {
+    mb.textContent = "\u2014";
+    note.innerHTML = "&nbsp;";
+    return;
+  }
+  var m = getRoiMatrix();
+  var fvf   = Number(m.fees.fvf)       || 0;
+  var promo = Number(m.fees.promoted)  || 0;
+  var per   = Number(m.fees.per_order) || 0;
+  var roi   = roiForStr(fields.str);
+  var feePct = (fvf + promo) / 100;
+  var net = fields.value - (fields.value * feePct) - per;
+  var maxBuy = net / (1 + roi / 100);
+  if (!isFinite(maxBuy) || maxBuy <= 0) {
+    mb.textContent = "\u2014";
+    note.innerHTML = "&nbsp;";
+    return;
+  }
+  mb.textContent = "$" + maxBuy.toFixed(2);
+  note.textContent = "ROI " + roi + "%";
+}
+$("estValue").addEventListener("input", updateMaxBuy);
+$("estStr").addEventListener("input",   updateMaxBuy);
+
 $("startOverBtn").addEventListener("click", function() {
   photos = [];
-  fields = { model: "", brand: "", item: "", adjectives: "", notes: "", confidence: "" };
+  fields = defaultFields();
   lastModelUsed = null;
   lastHintUsed  = "";
   if (!$("stickyHint").checked) $("hintText").value = "";
+  $("negTerms").value = "";
+  $("estValue").value = "";
+  $("estStr").value   = "";
+  $("estMaxBuy").textContent = "\u2014";
+  $("estRoiNote").innerHTML = "&nbsp;";
   renderPhotos();
   updateIdentifyButton();
   hide($("result"));
@@ -741,16 +979,28 @@ $("saveHistoryBtn").addEventListener("click", async function() {
   btn.disabled = true;
   try {
     var thumb = await makeThumbnail(photos[0].dataUrl, 200);
+    var maxBuyText = $("estMaxBuy").textContent;
     var entry = {
       timestamp:  Date.now(),
-      model:      fields.model,
-      brand:      fields.brand,
-      item:       fields.item,
-      adjectives: fields.adjectives,
+      // active-only strings (for search + display)
+      model:      activeTokens(fields.modelTokens, fields.modelActive).join(" "),
+      brand:      activeTokens(fields.brandTokens, fields.brandActive).join(" "),
+      item:       activeTokens(fields.itemTokens,  fields.itemActive).join(" "),
+      adjectives: activeTokens(fields.adjTokens,   fields.adjActive).join(" "),
+      // full tokens + active state (for round-trip editing later)
+      modelTokens: fields.modelTokens.slice(), modelActive: fields.modelActive.slice(),
+      brandTokens: fields.brandTokens.slice(), brandActive: fields.brandActive.slice(),
+      itemTokens:  fields.itemTokens.slice(),  itemActive:  fields.itemActive.slice(),
+      adjTokens:   fields.adjTokens.slice(),   adjActive:   fields.adjActive.slice(),
       query:      $("query").value.trim(),
+      negTerms:   $("negTerms").value.trim(),
       confidence: fields.confidence,
+      value:      fields.value,
+      str:        fields.str,
+      maxBuy:     maxBuyText && maxBuyText !== "\u2014" ? maxBuyText : "",
+      modelUsed:  lastModelUsed || "",
       notes:      $("resultNotes").value.trim(),
-      hint:       $("hintText").value.trim(),
+      hint:       ($("hintText").value.trim() || lastHintUsed || ""),
       photoCount: photos.length,
       thumb:      thumb
     };
@@ -919,7 +1169,12 @@ async function openHistDetail(id) {
     ["Brand",       entry.brand],
     ["Item",        entry.item],
     ["Adjectives",  entry.adjectives],
-    ["Hint used",   entry.hint]
+    ["Excluded",    entry.negTerms],
+    ["Est. value",  entry.value != null ? "$" + Number(entry.value).toFixed(2) : ""],
+    ["STR",         entry.str   != null ? entry.str + "%" : ""],
+    ["Max buy",     entry.maxBuy || ""],
+    ["Hint used",   entry.hint],
+    ["Model used",  entry.modelUsed ? (entry.modelUsed.indexOf("opus") !== -1 ? "Opus" : entry.modelUsed) : ""]
   ];
   for (var i = 0; i < rows.length; i++) {
     var k = rows[i][0], v = rows[i][1];
