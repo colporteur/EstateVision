@@ -211,6 +211,17 @@
   .est-prefix, .est-suffix { color: #888; font-weight: 400; }
   .est-derived { font-size: 1.1em; font-weight: 600; color: #9fd89f; margin-top: 3px; }
   .est-roi-note { font-size: 0.65em; color: #6f9f6f; margin-top: 1px; font-weight: 400; }
+  .est-buttons-row {
+    display: flex; gap: 3px; justify-content: center; margin-top: 4px;
+  }
+  .est-mini-btn {
+    width: auto; padding: 3px 6px; font-size: 0.7em;
+    background: #0f0f0f; color: #bbb;
+    border: 1px solid #333; border-radius: 4px;
+    margin: 0; font-weight: 500;
+    line-height: 1.1;
+  }
+  .est-mini-btn:active { background: #2a2a2a; }
 
   /* Settings: ROI matrix */
   .settings-subhead {
@@ -251,8 +262,12 @@
     <div><label>ROI target (%)</label><input type="number" id="roiTier1Roi" min="0" step="1"></div>
     <div><label>Tier 2: STR &ge; (%)</label><input type="number" id="roiTier2Str" min="0" max="100" step="1"></div>
     <div><label>ROI target (%)</label><input type="number" id="roiTier2Roi" min="0" step="1"></div>
-    <div><label>Tier 3 (below Tier 2)</label><input type="text" value="catch-all" disabled></div>
+    <div><label>Tier 3: STR &ge; (%)</label><input type="number" id="roiTier3Str" min="0" max="100" step="1"></div>
     <div><label>ROI target (%)</label><input type="number" id="roiTier3Roi" min="0" step="1"></div>
+    <div><label>Tier 4: STR &ge; (%)</label><input type="number" id="roiTier4Str" min="0" max="100" step="1"></div>
+    <div><label>ROI target (%)</label><input type="number" id="roiTier4Roi" min="0" step="1"></div>
+    <div><label>Tier 5 (catch-all)</label><input type="text" value="below Tier 4" disabled></div>
+    <div><label>ROI target (%)</label><input type="number" id="roiTier5Roi" min="0" step="1"></div>
   </div>
 
   <div class="settings-subhead">eBay Fees</div>
@@ -332,19 +347,29 @@
     <div class="estimates-bar">
       <div class="est-cell">
         <div class="est-label">Est. Value</div>
+        <div class="est-buttons-row">
+          <button class="est-mini-btn" id="reduce10" type="button">&minus;10%</button>
+          <button class="est-mini-btn" id="reduce20" type="button">&minus;20%</button>
+          <button class="est-mini-btn" id="reduce30" type="button">&minus;30%</button>
+        </div>
         <div class="est-value-wrap">
           <span class="est-prefix">$</span><input type="number" id="estValue" step="0.01" min="0" inputmode="decimal">
         </div>
       </div>
       <div class="est-cell">
         <div class="est-label">Sell-Through</div>
+        <div class="est-buttons-row">
+          <button class="est-mini-btn" id="strUp"   type="button" title="Next tier up">&#9650; tier</button>
+          <button class="est-mini-btn" id="strDown" type="button" title="Next tier down">&#9660; tier</button>
+        </div>
         <div class="est-value-wrap">
           <input type="number" id="estStr" step="1" min="0" max="100" inputmode="numeric"><span class="est-suffix">%</span>
         </div>
       </div>
       <div class="est-cell derived">
         <div class="est-label">Max Buy</div>
-        <div class="est-derived" id="estMaxBuy">&mdash;</div>
+        <div class="est-buttons-row">&nbsp;</div>
+        <div class="est-value-wrap"><span class="est-derived" id="estMaxBuy">&mdash;</span></div>
         <div class="est-roi-note" id="estRoiNote">&nbsp;</div>
       </div>
     </div>
@@ -420,9 +445,11 @@ var LS_ROI    = "itemid.roiMatrix";
 
 var DEFAULT_ROI = {
   tiers: [
+    { str: 80, roi: 30  },
     { str: 60, roi: 50  },
-    { str: 30, roi: 100 },
-    { str: 0,  roi: 200 }
+    { str: 40, roi: 100 },
+    { str: 20, roi: 150 },
+    { str: 0,  roi: 250 }
   ],
   fees: { fvf: 13.25, promoted: 5, per_order: 0.30 }
 };
@@ -445,13 +472,27 @@ var lastModelUsed = null;
 var lastHintUsed  = "";
 
 function getRoiMatrix() {
+  var m = JSON.parse(JSON.stringify(DEFAULT_ROI));
   try {
     var raw = localStorage.getItem(LS_ROI);
-    if (!raw) return JSON.parse(JSON.stringify(DEFAULT_ROI));
-    var m = JSON.parse(raw);
-    if (!m || !m.tiers || !m.fees) return JSON.parse(JSON.stringify(DEFAULT_ROI));
-    return m;
-  } catch (e) { return JSON.parse(JSON.stringify(DEFAULT_ROI)); }
+    var stored = raw ? JSON.parse(raw) : null;
+    if (stored) {
+      // Only accept stored tiers if the count matches current default (clean migration across tier-count changes).
+      if (stored.tiers && Array.isArray(stored.tiers) && stored.tiers.length === m.tiers.length) {
+        for (var i = 0; i < m.tiers.length; i++) {
+          if (typeof stored.tiers[i].str === "number") m.tiers[i].str = stored.tiers[i].str;
+          if (typeof stored.tiers[i].roi === "number") m.tiers[i].roi = stored.tiers[i].roi;
+        }
+      }
+      if (stored.fees) {
+        if (typeof stored.fees.fvf       === "number") m.fees.fvf       = stored.fees.fvf;
+        if (typeof stored.fees.promoted  === "number") m.fees.promoted  = stored.fees.promoted;
+        if (typeof stored.fees.per_order === "number") m.fees.per_order = stored.fees.per_order;
+      }
+    }
+    m.tiers[m.tiers.length - 1].str = 0; // catch-all always 0
+  } catch (e) { /* fall through with defaults */ }
+  return m;
 }
 function loadSettings() {
   $("apikey").value = localStorage.getItem(LS_KEY) || "";
@@ -461,7 +502,11 @@ function loadSettings() {
   $("roiTier1Roi").value = m.tiers[0].roi;
   $("roiTier2Str").value = m.tiers[1].str;
   $("roiTier2Roi").value = m.tiers[1].roi;
+  $("roiTier3Str").value = m.tiers[2].str;
   $("roiTier3Roi").value = m.tiers[2].roi;
+  $("roiTier4Str").value = m.tiers[3].str;
+  $("roiTier4Roi").value = m.tiers[3].roi;
+  $("roiTier5Roi").value = m.tiers[4].roi;
   $("feeFvf").value      = m.fees.fvf;
   $("feePromo").value    = m.fees.promoted;
   $("feePerOrder").value = m.fees.per_order;
@@ -471,9 +516,11 @@ function saveSettings() {
   localStorage.setItem(LS_MODEL, $("model").value);
   var matrix = {
     tiers: [
-      { str: numOr($("roiTier1Str").value, 60), roi: numOr($("roiTier1Roi").value, 50)  },
-      { str: numOr($("roiTier2Str").value, 30), roi: numOr($("roiTier2Roi").value, 100) },
-      { str: 0,                                  roi: numOr($("roiTier3Roi").value, 200) }
+      { str: numOr($("roiTier1Str").value, 80), roi: numOr($("roiTier1Roi").value, 30)  },
+      { str: numOr($("roiTier2Str").value, 60), roi: numOr($("roiTier2Roi").value, 50)  },
+      { str: numOr($("roiTier3Str").value, 40), roi: numOr($("roiTier3Roi").value, 100) },
+      { str: numOr($("roiTier4Str").value, 20), roi: numOr($("roiTier4Roi").value, 150) },
+      { str: 0,                                  roi: numOr($("roiTier5Roi").value, 250) }
     ],
     fees: {
       fvf:       numOr($("feeFvf").value,      13.25),
@@ -885,6 +932,39 @@ function updateMaxBuy() {
 }
 $("estValue").addEventListener("input", updateMaxBuy);
 $("estStr").addEventListener("input",   updateMaxBuy);
+
+/* Reduce value buttons — compound (each press cuts current value by pct) */
+function reduceValue(pct) {
+  var cur = parseFloat($("estValue").value);
+  if (!isFinite(cur) || cur <= 0) return;
+  var reduced = cur * (1 - pct / 100);
+  $("estValue").value = reduced.toFixed(2);
+  updateMaxBuy();
+}
+$("reduce10").addEventListener("click", function() { reduceValue(10); });
+$("reduce20").addEventListener("click", function() { reduceValue(20); });
+$("reduce30").addEventListener("click", function() { reduceValue(30); });
+
+/* STR tier-step buttons — jump STR to the next tier's threshold up or down */
+function stepStr(direction) {
+  var m = getRoiMatrix();
+  var raw = $("estStr").value;
+  var curStr = raw === "" ? 0 : Number(raw);
+  if (!isFinite(curStr)) curStr = 0;
+  // Tiers are ordered descending by str threshold; find the current tier index.
+  var curIdx = m.tiers.length - 1;
+  for (var i = 0; i < m.tiers.length; i++) {
+    if (curStr >= m.tiers[i].str) { curIdx = i; break; }
+  }
+  var newIdx = direction === "up"
+    ? Math.max(0, curIdx - 1)
+    : Math.min(m.tiers.length - 1, curIdx + 1);
+  if (newIdx === curIdx) return;
+  $("estStr").value = m.tiers[newIdx].str;
+  updateMaxBuy();
+}
+$("strUp").addEventListener("click",   function() { stepStr("up"); });
+$("strDown").addEventListener("click", function() { stepStr("down"); });
 
 $("startOverBtn").addEventListener("click", function() {
   photos = [];
