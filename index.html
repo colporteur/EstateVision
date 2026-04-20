@@ -365,6 +365,10 @@
           <button class="est-mini-btn" id="adjustMinus" type="button">&minus;10%</button>
           <button class="est-mini-btn" id="adjustPlus"  type="button">+10%</button>
         </div>
+        <div class="est-buttons-row">
+          <button class="est-mini-btn" id="adjustMinus5" type="button">&minus;$5</button>
+          <button class="est-mini-btn" id="adjustPlus5"  type="button">+$5</button>
+        </div>
         <div class="est-value-wrap">
           <span class="est-prefix">$</span><input type="number" id="estValue" step="0.01" min="0" inputmode="decimal">
         </div>
@@ -375,12 +379,14 @@
           <button class="est-mini-btn" id="strUp"   type="button" title="Next tier up">&#9650; tier</button>
           <button class="est-mini-btn" id="strDown" type="button" title="Next tier down">&#9660; tier</button>
         </div>
+        <div class="est-buttons-row">&nbsp;</div>
         <div class="est-value-wrap">
           <input type="number" id="estStr" step="1" min="0" max="100" inputmode="numeric"><span class="est-suffix">%</span>
         </div>
       </div>
       <div class="est-cell derived">
         <div class="est-label">Max Buy</div>
+        <div class="est-buttons-row">&nbsp;</div>
         <div class="est-buttons-row">&nbsp;</div>
         <div class="est-value-wrap"><span class="est-derived" id="estMaxBuy">&mdash;</span></div>
         <div class="est-roi-note" id="estRoiNote">&nbsp;</div>
@@ -1113,6 +1119,18 @@ function adjustValue(pctDelta) {
 }
 $("adjustMinus").addEventListener("click", function() { adjustValue(-10); });
 $("adjustPlus").addEventListener("click",  function() { adjustValue(10);  });
+
+/* Value +/- $5 buttons — additive, tap multiple times (clamped to 0) */
+function adjustValueDollars(delta) {
+  var cur = parseFloat($("estValue").value);
+  if (!isFinite(cur)) cur = 0;
+  var adjusted = cur + delta;
+  if (adjusted < 0) adjusted = 0;
+  $("estValue").value = adjusted.toFixed(2);
+  updateEstimates();
+}
+$("adjustMinus5").addEventListener("click", function() { adjustValueDollars(-5); });
+$("adjustPlus5").addEventListener("click",  function() { adjustValueDollars(5);  });
 
 /* STR tier-step buttons — jump STR to the next tier's threshold up or down */
 function stepStr(direction) {
