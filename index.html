@@ -176,6 +176,108 @@
   }
   .saved-flash { background: #1f3a1f !important; border-color: #305030 !important; }
 
+  /* Groups */
+  .group-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px; background: #222; border: 1px solid #333;
+    border-radius: 8px; margin-bottom: 8px; cursor: pointer;
+  }
+  .group-row:active { background: #2a2a2a; }
+  .group-row.is-active { border-color: #3b82f6; }
+  .group-row .group-name {
+    flex: 1; font-size: 1em; color: #e8e8e8;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .group-row .group-count { color: #888; font-size: 0.85em; flex-shrink: 0; }
+  .group-active-badge {
+    display: inline-block; background: #3b82f6; color: white;
+    font-size: 0.62em; font-weight: 600; padding: 2px 7px;
+    border-radius: 4px; margin-left: 6px; text-transform: uppercase;
+    letter-spacing: 0.08em; vertical-align: middle;
+  }
+  .group-row-inline-btns {
+    display: flex; gap: 4px; flex-shrink: 0;
+  }
+  .group-row-inline-btns button {
+    width: auto; padding: 6px 10px; font-size: 0.9em;
+    margin: 0; background: #2a2a2a; border: 1px solid #444; color: #aaa;
+    border-radius: 6px;
+  }
+  .group-row-inline-btns button:active { background: #3a3a3a; }
+
+  .active-group-chip {
+    display: inline-block; padding: 6px 12px; font-size: 0.8em;
+    background: #1a2a4a; border: 1px solid #2a4570; border-radius: 6px;
+    color: #aac8ff; text-transform: none; letter-spacing: 0; margin-top: 6px;
+    cursor: pointer;
+  }
+  .active-group-chip:active { background: #2a4570; }
+  .active-group-chip .chip-name { color: #fff; font-weight: 600; }
+
+  .group-detail-head {
+    display: flex; gap: 8px; align-items: center; margin-bottom: 12px;
+  }
+  .group-detail-head input {
+    flex: 1; margin: 0;
+  }
+  .group-detail-head .set-active-btn {
+    width: auto; padding: 8px 12px; margin: 0; font-size: 0.85em;
+    flex-shrink: 0;
+  }
+  .group-item {
+    display: flex; gap: 10px; padding: 8px;
+    background: #222; border: 1px solid #333; border-radius: 8px;
+    margin-bottom: 6px; align-items: center;
+  }
+  .group-item-thumb {
+    width: 56px; height: 56px; border-radius: 6px;
+    background: #0f0f0f; object-fit: cover; flex-shrink: 0;
+  }
+  .group-item-meta { flex: 1; min-width: 0; }
+  .group-item-query {
+    font-size: 0.9em; color: #e8e8e8; word-break: break-word;
+    overflow: hidden; display: -webkit-box;
+    -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  }
+  .group-item-nums {
+    font-size: 0.78em; color: #aaa; margin-top: 3px; word-break: break-word;
+  }
+  .group-item-nums .num-max { color: #9fd89f; font-weight: 600; }
+  .group-item-nums .num-neg { color: #d89f9f; font-weight: 600; }
+  .group-item-x {
+    background: #2a2a2a; border: 1px solid #444; color: #aaa;
+    width: 36px; height: 36px; border-radius: 18px; padding: 0;
+    margin: 0; font-size: 1.3em; line-height: 1; flex-shrink: 0;
+  }
+  .group-item-x:active { background: #3a1f1f; color: #ff8888; border-color: #5a2f2f; }
+
+  /* Inline save-to-group picker */
+  #saveGroupPicker {
+    background: #1a1a1a; border: 1px solid #333; border-radius: 8px;
+    padding: 10px; margin: 0 0 8px 0;
+  }
+  .picker-title {
+    font-size: 0.75em; color: #888; text-transform: uppercase;
+    letter-spacing: 0.08em; margin-bottom: 6px;
+  }
+  .picker-group-btn {
+    display: flex; justify-content: space-between; align-items: center;
+    text-align: left; padding: 10px 12px; margin-bottom: 4px;
+  }
+  .picker-group-btn .pg-count { color: #888; font-size: 0.85em; }
+  .picker-group-btn.is-active { border-color: #3b82f6; }
+
+  .change-group-link {
+    display: inline-block; width: auto;
+    background: none; border: none; color: #888;
+    text-decoration: underline; font-size: 0.85em;
+    padding: 4px 8px; margin: -4px 0 6px; font-family: inherit;
+  }
+  .save-to-group-btn {
+    background: #3a2a5a; border-color: #5a3f8a; color: #e8d8ff;
+  }
+  .save-to-group-btn:active { background: #4a3a6a; }
+
   /* Word toggle pills */
   .tk-group { padding: 10px 0; border-bottom: 1px solid #2a2a2a; }
   .tk-group:last-of-type { border-bottom: none; }
@@ -250,7 +352,8 @@
 <header>
   <h1 id="pageTitle">Item ID</h1>
   <div class="nav">
-    <button class="icon-btn" id="historyBtn" title="History" aria-label="History">&#9776;</button>
+    <button class="icon-btn" id="groupsBtn"   title="Groups"   aria-label="Groups">&#128193;</button>
+    <button class="icon-btn" id="historyBtn"  title="History"  aria-label="History">&#9776;</button>
     <button class="icon-btn" id="settingsBtn" title="Settings" aria-label="Settings">&#9881;</button>
   </div>
 </header>
@@ -426,6 +529,17 @@
     </div>
 
     <button class="primary" id="saveHistoryBtn">&#128190; Save to History</button>
+
+    <button class="primary save-to-group-btn" id="saveToGroupBtn">&#128193; Save to <span id="saveToGroupName">Table 1</span></button>
+    <div style="text-align:center;">
+      <button type="button" class="change-group-link" id="openSaveGroupPickerBtn">Save to different group&hellip;</button>
+    </div>
+    <div id="saveGroupPicker" class="hidden">
+      <div class="picker-title">Tap a group to save:</div>
+      <div id="saveGroupPickerList"></div>
+      <button id="saveGroupPickerCancelBtn" style="margin-top:4px;">Cancel</button>
+    </div>
+
     <button id="startOverBtn">Start Over</button>
   </div>
 </div>
@@ -469,6 +583,29 @@
   <button class="danger" id="histDeleteBtn">Delete Entry</button>
 </div>
 
+<div id="view-groups" class="hidden">
+  <button class="back-btn" id="groupsBackToMainBtn">&larr; Back</button>
+  <div class="footnote" style="margin-bottom:8px;">Active group receives single-tap saves. Tap a row to open.</div>
+  <div id="groupsList"></div>
+</div>
+
+<div id="view-group-detail" class="hidden">
+  <button class="back-btn" id="groupDetailBackBtn">&larr; Back to Groups</button>
+  <div class="group-detail-head">
+    <input type="text" id="groupNameInput" maxlength="40" autocomplete="off" spellcheck="false">
+    <button class="set-active-btn" id="groupSetActiveBtn" type="button">Make active</button>
+  </div>
+  <div class="footnote" id="groupSortNote" style="margin-top:-4px;">Sorted by Max Buy (highest first)</div>
+  <div id="groupItemsList"></div>
+  <div id="groupEmpty" class="hidden" style="text-align:center; color:#666; padding: 30px 16px;">
+    No items in this group yet.
+  </div>
+  <div class="row" style="margin-top:16px;">
+    <button class="danger" id="groupClearBtn">Clear all</button>
+    <button class="primary" id="groupCloseoutBtn">Close out &rarr; next</button>
+  </div>
+</div>
+
 <script>
 "use strict";
 
@@ -482,7 +619,21 @@ var LS_HINT   = "itemid.hint";
 var LS_STICKY = "itemid.sticky";
 var LS_ROI    = "itemid.roiMatrix";
 var LS_TAXBP  = "itemid.taxBpPct";
+var LS_ACTIVE_GROUP = "itemid.activeGroup";
 var TAXBP_DEFAULT = 10;
+var GROUP_COUNT = 14;
+
+function getActiveGroupId() {
+  var raw = localStorage.getItem(LS_ACTIVE_GROUP);
+  var n = parseInt(raw, 10);
+  if (!isFinite(n) || n < 1 || n > GROUP_COUNT) return 1;
+  return n;
+}
+function setActiveGroupId(n) {
+  n = parseInt(n, 10);
+  if (!isFinite(n) || n < 1 || n > GROUP_COUNT) return;
+  localStorage.setItem(LS_ACTIVE_GROUP, String(n));
+}
 
 function getStickyTaxBpPct() {
   var raw = localStorage.getItem(LS_TAXBP);
@@ -1187,8 +1338,9 @@ function showError(msg) {
 }
 
 var DB_NAME = "itemid";
-var DB_VERSION = 1;
+var DB_VERSION = 2;
 var STORE = "items";
+var GROUPS_STORE = "groups";
 
 function openDb() {
   return new Promise(function(resolve, reject) {
@@ -1199,10 +1351,75 @@ function openDb() {
         var os = db.createObjectStore(STORE, { keyPath: "id", autoIncrement: true });
         os.createIndex("timestamp", "timestamp", { unique: false });
       }
+      if (!db.objectStoreNames.contains(GROUPS_STORE)) {
+        var gs = db.createObjectStore(GROUPS_STORE, { keyPath: "id" });
+        // Seed 14 default groups (Table 1 .. Table 14)
+        for (var i = 1; i <= GROUP_COUNT; i++) {
+          gs.add({ id: i, name: "Table " + i, items: [] });
+        }
+      }
     };
     req.onsuccess = function() { resolve(req.result); };
     req.onerror   = function() { reject(req.error); };
   });
+}
+function groupsStore(mode) {
+  return openDb().then(function(db) { return db.transaction(GROUPS_STORE, mode).objectStore(GROUPS_STORE); });
+}
+async function groupsGetAll() {
+  var store = await groupsStore("readonly");
+  return new Promise(function(res, rej) {
+    var r = store.getAll();
+    r.onsuccess = function() {
+      var arr = (r.result || []).slice();
+      arr.sort(function(a, b) { return a.id - b.id; });
+      res(arr);
+    };
+    r.onerror = function() { rej(r.error); };
+  });
+}
+async function groupsGet(id) {
+  var store = await groupsStore("readonly");
+  return new Promise(function(res, rej) {
+    var r = store.get(id);
+    r.onsuccess = function() { res(r.result); };
+    r.onerror   = function() { rej(r.error); };
+  });
+}
+async function groupsPut(doc) {
+  var store = await groupsStore("readwrite");
+  return new Promise(function(res, rej) {
+    var r = store.put(doc);
+    r.onsuccess = function() { res(); };
+    r.onerror   = function() { rej(r.error); };
+  });
+}
+async function groupsAddItem(id, item) {
+  var g = await groupsGet(id);
+  if (!g) {
+    g = { id: id, name: "Table " + id, items: [] };
+  }
+  if (!Array.isArray(g.items)) g.items = [];
+  g.items.push(item);
+  await groupsPut(g);
+}
+async function groupsRemoveItem(id, savedAt) {
+  var g = await groupsGet(id);
+  if (!g || !Array.isArray(g.items)) return;
+  g.items = g.items.filter(function(it) { return it.savedAt !== savedAt; });
+  await groupsPut(g);
+}
+async function groupsClearItems(id) {
+  var g = await groupsGet(id);
+  if (!g) return;
+  g.items = [];
+  await groupsPut(g);
+}
+async function groupsRename(id, name) {
+  var g = await groupsGet(id);
+  if (!g) return;
+  g.name = String(name || "").trim().slice(0, 40) || ("Table " + id);
+  await groupsPut(g);
 }
 function dbStore(mode) {
   return openDb().then(function(db) { return db.transaction(STORE, mode).objectStore(STORE); });
@@ -1247,6 +1464,106 @@ async function dbDelete(id) {
     r.onerror   = function() { rej(r.error); };
   });
 }
+
+/* Groups: snapshot + save */
+function parseDollarText(text) {
+  if (!text || text === "\u2014") return null;
+  // Normalize U+2212 (unicode minus) to ASCII hyphen so parseFloat handles signs.
+  var normalized = text.replace(/\u2212/g, "-");
+  var stripped = normalized.replace(/[^0-9.\-]/g, "");
+  var n = parseFloat(stripped);
+  return isFinite(n) ? n : null;
+}
+async function buildGroupSnapshot() {
+  var thumb = null;
+  if (photos.length > 0) thumb = await makeThumbnail(photos[0].dataUrl, 200);
+  var maxBuyText = $("estMaxBuy").textContent;
+  var profitText = $("estProfit").textContent;
+  var costNum    = fields.cost  != null ? fields.cost  : null;
+  var taxBpDlr   = (costNum != null && fields.taxBpPct != null)
+                     ? costNum * (fields.taxBpPct / 100) : null;
+  return {
+    savedAt:     Date.now(),
+    thumb:       thumb,
+    query:       $("query").value.trim(),
+    value:       fields.value,
+    str:         fields.str,
+    maxBuyText:  (maxBuyText && maxBuyText !== "\u2014") ? maxBuyText : "",
+    maxBuyNum:   parseDollarText(maxBuyText),
+    cost:        costNum,
+    taxBpPct:    fields.taxBpPct,
+    taxBp:       taxBpDlr,
+    profitText:  (profitText && profitText !== "\u2014") ? profitText : "",
+    profitNum:   parseDollarText(profitText)
+  };
+}
+async function saveToGroup(groupId) {
+  if (photos.length === 0) return;
+  var btn = $("saveToGroupBtn");
+  btn.disabled = true;
+  try {
+    var snap = await buildGroupSnapshot();
+    await groupsAddItem(groupId, snap);
+    var g = await groupsGet(groupId);
+    var savedName = g ? g.name : ("Table " + groupId);
+    btn.innerHTML = "\u2713 Saved to " + savedName;
+    btn.classList.add("saved-flash");
+    setTimeout(function() {
+      btn.classList.remove("saved-flash");
+      updateSaveToGroupLabel();
+      btn.disabled = false;
+    }, 1600);
+  } catch (e) {
+    showError("Failed to save to group: " + (e.message || e));
+    btn.disabled = false;
+  }
+}
+async function updateSaveToGroupLabel() {
+  var g = await groupsGet(getActiveGroupId());
+  var name = g ? g.name : ("Table " + getActiveGroupId());
+  var span = $("saveToGroupName");
+  if (span) span.textContent = name;
+  // Ensure the label text stays correct even after the "Saved" flash replaces innerHTML
+  var btn = $("saveToGroupBtn");
+  if (btn && btn.querySelector("#saveToGroupName") == null) {
+    btn.innerHTML = "\u{1F4C1} Save to <span id=\"saveToGroupName\"></span>";
+    $("saveToGroupName").textContent = name;
+  }
+}
+function escapeHtml(s) {
+  return String(s == null ? "" : s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+$("saveToGroupBtn").addEventListener("click", function() {
+  saveToGroup(getActiveGroupId());
+});
+$("openSaveGroupPickerBtn").addEventListener("click", async function() {
+  var list = $("saveGroupPickerList");
+  list.innerHTML = "";
+  var groups = await groupsGetAll();
+  var activeId = getActiveGroupId();
+  groups.forEach(function(g) {
+    var b = document.createElement("button");
+    b.className = "picker-group-btn" + (g.id === activeId ? " is-active" : "");
+    b.type = "button";
+    b.innerHTML =
+      '<span>' + escapeHtml(g.name) + (g.id === activeId ? ' <span class="group-active-badge">Active</span>' : '') + '</span>' +
+      '<span class="pg-count">' + (g.items ? g.items.length : 0) + ' items</span>';
+    b.addEventListener("click", async function() {
+      hide($("saveGroupPicker"));
+      await saveToGroup(g.id);
+    });
+    list.appendChild(b);
+  });
+  show($("saveGroupPicker"));
+});
+$("saveGroupPickerCancelBtn").addEventListener("click", function() {
+  hide($("saveGroupPicker"));
+});
 
 $("saveHistoryBtn").addEventListener("click", async function() {
   if (photos.length === 0) return;
@@ -1301,14 +1618,19 @@ $("saveHistoryBtn").addEventListener("click", async function() {
   }
 });
 
+var currentGroupId = null;
+
 function showView(name) {
   hide($("view-main"));
   hide($("view-history"));
   hide($("view-history-detail"));
+  hide($("view-groups"));
+  hide($("view-group-detail"));
   hide($("settings"));
   if (name === "main") {
     show($("view-main"));
     $("subtitle").textContent = "Identify item \u2192 research prices";
+    updateSaveToGroupLabel();
   } else if (name === "history") {
     show($("view-history"));
     $("subtitle").textContent = "Past identifications";
@@ -1316,12 +1638,173 @@ function showView(name) {
   } else if (name === "detail") {
     show($("view-history-detail"));
     $("subtitle").textContent = "Entry details";
+  } else if (name === "groups") {
+    show($("view-groups"));
+    $("subtitle").textContent = "Auction groups";
+    renderGroupsList();
+  } else if (name === "group-detail") {
+    show($("view-group-detail"));
+    $("subtitle").textContent = "Group details";
+    renderGroupDetail(currentGroupId);
   }
   window.scrollTo({ top: 0, behavior: "auto" });
 }
 $("historyBtn").addEventListener("click", function() { showView("history"); });
 $("histBackToMainBtn").addEventListener("click", function() { showView("main"); });
 $("histBackBtn").addEventListener("click", function() { showView("history"); });
+$("groupsBtn").addEventListener("click", function() { showView("groups"); });
+$("groupsBackToMainBtn").addEventListener("click", function() { showView("main"); });
+$("groupDetailBackBtn").addEventListener("click", function() { showView("groups"); });
+
+async function renderGroupsList() {
+  var list = $("groupsList");
+  list.innerHTML = "";
+  var groups = await groupsGetAll();
+  var activeId = getActiveGroupId();
+  groups.forEach(function(g) {
+    var row = document.createElement("div");
+    row.className = "group-row" + (g.id === activeId ? " is-active" : "");
+    row.innerHTML =
+      '<div class="group-name">' + escapeHtml(g.name) +
+        (g.id === activeId ? ' <span class="group-active-badge">Active</span>' : '') +
+      '</div>' +
+      '<div class="group-count">' + (g.items ? g.items.length : 0) + ' items</div>';
+    row.addEventListener("click", function() {
+      currentGroupId = g.id;
+      showView("group-detail");
+    });
+    list.appendChild(row);
+  });
+}
+
+function fmtDollar(n) { return "$" + Number(n).toFixed(2); }
+function fmtSigned(n) {
+  if (n == null || !isFinite(n)) return "";
+  if (n < 0) return "\u2212$" + Math.abs(n).toFixed(2);
+  return "$" + n.toFixed(2);
+}
+
+async function renderGroupDetail(groupId) {
+  if (groupId == null) { showView("groups"); return; }
+  var g = await groupsGet(groupId);
+  if (!g) { showView("groups"); return; }
+
+  $("groupNameInput").value = g.name || ("Table " + g.id);
+  var activeId = getActiveGroupId();
+  var setActiveBtn = $("groupSetActiveBtn");
+  if (g.id === activeId) {
+    setActiveBtn.textContent = "\u2713 Active";
+    setActiveBtn.disabled = true;
+  } else {
+    setActiveBtn.textContent = "Make active";
+    setActiveBtn.disabled = false;
+  }
+
+  var items = (g.items || []).slice();
+  // Sort by Max Buy descending (nulls last)
+  items.sort(function(a, b) {
+    var am = a.maxBuyNum, bm = b.maxBuyNum;
+    if (am == null && bm == null) return 0;
+    if (am == null) return 1;
+    if (bm == null) return -1;
+    return bm - am;
+  });
+
+  var list = $("groupItemsList");
+  list.innerHTML = "";
+  if (items.length === 0) {
+    show($("groupEmpty"));
+    return;
+  }
+  hide($("groupEmpty"));
+  items.forEach(function(it) {
+    var row = document.createElement("div");
+    row.className = "group-item";
+
+    var thumbHtml = it.thumb
+      ? '<img class="group-item-thumb" alt="" src="' + escapeHtml(it.thumb) + '">'
+      : '<div class="group-item-thumb"></div>';
+
+    var parts = [];
+    if (it.value != null)      parts.push("Sale " + fmtDollar(it.value));
+    if (it.str != null)        parts.push("STR " + it.str + "%");
+    if (it.maxBuyText)         parts.push('<span class="num-max">Max ' + escapeHtml(it.maxBuyText) + '</span>');
+    if (it.cost != null)       parts.push("Cost " + fmtDollar(it.cost));
+    if (it.taxBpPct != null)   parts.push("Tax+BP " + Number(it.taxBpPct) + "%");
+    if (it.profitText) {
+      var cls = (it.profitNum != null && it.profitNum < 0) ? "num-neg" : "num-max";
+      parts.push('<span class="' + cls + '">Profit ' + escapeHtml(it.profitText) + '</span>');
+    }
+
+    row.innerHTML =
+      thumbHtml +
+      '<div class="group-item-meta">' +
+        '<div class="group-item-query">' + escapeHtml(it.query || "(no query)") + '</div>' +
+        '<div class="group-item-nums">' + parts.join(" &middot; ") + '</div>' +
+      '</div>' +
+      '<button class="group-item-x" type="button" title="Remove">&times;</button>';
+
+    row.querySelector(".group-item-x").addEventListener("click", async function(e) {
+      e.stopPropagation();
+      await groupsRemoveItem(groupId, it.savedAt);
+      renderGroupDetail(groupId);
+    });
+    list.appendChild(row);
+  });
+}
+
+// Rename: save on blur or Enter
+function commitGroupRename() {
+  if (currentGroupId == null) return;
+  var input = $("groupNameInput");
+  var newName = (input.value || "").trim();
+  if (!newName) {
+    newName = "Table " + currentGroupId;
+    input.value = newName;
+  }
+  groupsRename(currentGroupId, newName).then(function() {
+    updateSaveToGroupLabel();
+  });
+}
+$("groupNameInput").addEventListener("blur", commitGroupRename);
+$("groupNameInput").addEventListener("keydown", function(e) {
+  if (e.key === "Enter") { e.preventDefault(); $("groupNameInput").blur(); }
+});
+
+$("groupSetActiveBtn").addEventListener("click", function() {
+  if (currentGroupId == null) return;
+  setActiveGroupId(currentGroupId);
+  updateSaveToGroupLabel();
+  renderGroupDetail(currentGroupId);
+});
+
+$("groupClearBtn").addEventListener("click", async function() {
+  if (currentGroupId == null) return;
+  var g = await groupsGet(currentGroupId);
+  var count = g && g.items ? g.items.length : 0;
+  if (count === 0) return;
+  if (!confirm("Clear all " + count + " items from \"" + (g.name || "this group") + "\"?")) return;
+  await groupsClearItems(currentGroupId);
+  renderGroupDetail(currentGroupId);
+});
+
+$("groupCloseoutBtn").addEventListener("click", async function() {
+  if (currentGroupId == null) return;
+  var g = await groupsGet(currentGroupId);
+  var count = g && g.items ? g.items.length : 0;
+  var nextId = (currentGroupId % GROUP_COUNT) + 1;
+  var nextG  = await groupsGet(nextId);
+  var nextName = nextG ? nextG.name : ("Table " + nextId);
+  var msg = count > 0
+    ? "Clear all " + count + " items and advance active group to \"" + nextName + "\"?"
+    : "No items to clear. Advance active group to \"" + nextName + "\"?";
+  if (!confirm(msg)) return;
+  if (count > 0) await groupsClearItems(currentGroupId);
+  setActiveGroupId(nextId);
+  currentGroupId = nextId;
+  updateSaveToGroupLabel();
+  renderGroupDetail(currentGroupId);
+});
 
 $("histSearch").addEventListener("input", renderHistory);
 
@@ -1575,6 +2058,7 @@ $("importFile").addEventListener("change", async function(e) {
 
 loadHintState();
 showView("main");
+updateSaveToGroupLabel();
 </script>
 
 </body>
