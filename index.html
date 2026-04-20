@@ -397,7 +397,7 @@
       <div class="est-cell">
         <div class="est-label">Tax + BP</div>
         <div class="est-value-wrap">
-          <span class="est-prefix">$</span><input type="number" id="estTaxBp" step="0.01" min="0" inputmode="decimal">
+          <input type="number" id="estTaxBpPct" step="0.1" min="0" inputmode="decimal"><span class="est-suffix">%</span>
         </div>
       </div>
       <div class="est-cell derived">
@@ -475,6 +475,19 @@ var LS_MODEL  = "itemid.model";
 var LS_HINT   = "itemid.hint";
 var LS_STICKY = "itemid.sticky";
 var LS_ROI    = "itemid.roiMatrix";
+var LS_TAXBP  = "itemid.taxBpPct";
+var TAXBP_DEFAULT = 10;
+
+function getStickyTaxBpPct() {
+  var raw = localStorage.getItem(LS_TAXBP);
+  if (raw == null || raw === "") return TAXBP_DEFAULT;
+  var n = Number(raw);
+  return isFinite(n) && n >= 0 ? n : TAXBP_DEFAULT;
+}
+function setStickyTaxBpPct(v) {
+  if (v == null || !isFinite(v) || v < 0) return;
+  localStorage.setItem(LS_TAXBP, String(v));
+}
 
 var DEFAULT_ROI = {
   tiers: [
@@ -495,7 +508,7 @@ function defaultFields() {
     adjTokens:   [], adjActive:   [],
     notes: "", confidence: "",
     value: null, str: null,
-    cost: null, taxBp: null
+    cost: null, taxBpPct: null
   };
 }
 
@@ -994,10 +1007,12 @@ function updateLinks() {
 
 /* Estimates bars: Sale Price / STR / Max Buy   +   Cost / Tax+BP / Projected Profit */
 function renderEstimatesBar() {
-  $("estValue").value = fields.value != null ? fields.value : "";
-  $("estStr").value   = fields.str   != null ? fields.str   : "";
-  $("estCost").value  = fields.cost  != null ? fields.cost  : "";
-  $("estTaxBp").value = fields.taxBp != null ? fields.taxBp : "";
+  $("estValue").value     = fields.value != null ? fields.value : "";
+  $("estStr").value       = fields.str   != null ? fields.str   : "";
+  $("estCost").value      = fields.cost  != null ? fields.cost  : "";
+  // Tax + BP %: use current field if set, otherwise the last-used sticky value (default 10).
+  if (fields.taxBpPct == null) fields.taxBpPct = getStickyTaxBpPct();
+  $("estTaxBpPct").value  = fields.taxBpPct;
   updateEstimates();
 }
 function readEstInputs() {
@@ -1006,10 +1021,10 @@ function readEstInputs() {
     var n = Number(s);
     return isFinite(n) ? n : null;
   };
-  fields.value = parse($("estValue").value);
-  fields.str   = parse($("estStr").value);
-  fields.cost  = parse($("estCost").value);
-  fields.taxBp = parse($("estTaxBp").value);
+  fields.value    = parse($("estValue").value);
+  fields.str      = parse($("estStr").value);
+  fields.cost     = parse($("estCost").value);
+  fields.taxBpPct = parse($("estTaxBpPct").value);
 }
 function roiForStr(str) {
   var m = getRoiMatrix();
@@ -1060,9 +1075,10 @@ function updateProfit() {
     note.innerHTML = "&nbsp;";
     return;
   }
-  var cost  = fields.cost  != null ? fields.cost  : 0;
-  var taxBp = fields.taxBp != null ? fields.taxBp : 0;
-  var profit = fields.value - feeOnSale(fields.value) - cost - taxBp;
+  var cost     = fields.cost     != null ? fields.cost     : 0;
+  var taxBpPct = fields.taxBpPct != null ? fields.taxBpPct : 0;
+  var taxBpDollars = cost * (taxBpPct / 100);
+  var profit = fields.value - feeOnSale(fields.value) - cost - taxBpDollars;
   if (!isFinite(profit)) {
     span.textContent = "\u2014";
     note.innerHTML = "&nbsp;";
@@ -1081,7 +1097,11 @@ function updateProfit() {
 $("estValue").addEventListener("input", updateEstimates);
 $("estStr").addEventListener("input",   updateEstimates);
 $("estCost").addEventListener("input",  updateEstimates);
-$("estTaxBp").addEventListener("input", updateEstimates);
+$("estTaxBpPct").addEventListener("input", function() {
+  updateEstimates();
+  // Persist whatever the user has typed (if valid) so the next item inherits it.
+  if (fields.taxBpPct != null) setStickyTaxBpPct(fields.taxBpPct);
+});
 
 /* Value +/- 10% buttons — compound (each press multiplies by 1 +/- 0.10) */
 function adjustValue(pctDelta) {
@@ -1122,10 +1142,12 @@ $("startOverBtn").addEventListener("click", function() {
   lastHintUsed  = "";
   if (!$("stickyHint").checked) $("hintText").value = "";
   $("negTerms").value = "";
-  $("estValue").value = "";
-  $("estStr").value   = "";
-  $("estCost").value  = "";
-  $("estTaxBp").value = "";
+  $("estValue").value    = "";
+  $("estStr").value      = "";
+  $("estCost").value     = "";
+  // Keep Tax + BP % sticky across items
+  fields.taxBpPct = getStickyTaxBpPct();
+  $("estTaxBpPct").value = fields.taxBpPct;
   $("estMaxBuy").textContent = "\u2014";
   $("estRoiNote").innerHTML = "&nbsp;";
   $("estProfit").textContent = "\u2014";
@@ -1234,7 +1256,10 @@ $("saveHistoryBtn").addEventListener("click", async function() {
       value:      fields.value,
       str:        fields.str,
       cost:       fields.cost,
-      taxBp:      fields.taxBp,
+      taxBpPct:   fields.taxBpPct,
+      taxBp:      (fields.cost != null && fields.taxBpPct != null)
+                    ? fields.cost * (fields.taxBpPct / 100)
+                    : null,
       maxBuy:     maxBuyText && maxBuyText !== "\u2014" ? maxBuyText : "",
       profit:     profitText && profitText !== "\u2014" ? profitText : "",
       modelUsed:  lastModelUsed || "",
@@ -1413,7 +1438,15 @@ async function openHistDetail(id) {
     ["STR",         entry.str   != null ? entry.str + "%" : ""],
     ["Max buy",     entry.maxBuy || ""],
     ["Cost",        entry.cost  != null ? "$" + Number(entry.cost).toFixed(2)  : ""],
-    ["Tax + BP",    entry.taxBp != null ? "$" + Number(entry.taxBp).toFixed(2) : ""],
+    ["Tax + BP",    (function() {
+      if (entry.taxBpPct != null) {
+        var s = Number(entry.taxBpPct) + "%";
+        if (entry.taxBp != null) s += " ($" + Number(entry.taxBp).toFixed(2) + ")";
+        return s;
+      }
+      // Legacy entries saved before the %-of-cost change stored dollars only
+      return entry.taxBp != null ? "$" + Number(entry.taxBp).toFixed(2) : "";
+    })()],
     ["Profit",      entry.profit || ""],
     ["Hint used",   entry.hint],
     ["Model used",  entry.modelUsed ? (entry.modelUsed.indexOf("opus") !== -1 ? "Opus" : entry.modelUsed) : ""]
