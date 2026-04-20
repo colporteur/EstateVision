@@ -219,7 +219,9 @@
   .est-value-wrap input:focus { outline: 1px solid #3b82f6; border-radius: 4px; background: #0f0f0f; }
   .est-prefix, .est-suffix { color: #888; font-weight: 400; }
   .est-derived { font-size: 1.1em; font-weight: 600; color: #9fd89f; margin-top: 3px; }
+  .est-derived.negative { color: #d89f9f; }
   .est-roi-note { font-size: 0.65em; color: #6f9f6f; margin-top: 1px; font-weight: 400; }
+  .est-roi-note.negative { color: #9f6f6f; }
   .est-buttons-row {
     display: flex; gap: 3px; justify-content: center; margin-top: 4px;
   }
@@ -358,7 +360,7 @@
 
     <div class="estimates-bar">
       <div class="est-cell">
-        <div class="est-label">Est. Value</div>
+        <div class="est-label">Sale Price</div>
         <div class="est-buttons-row">
           <button class="est-mini-btn" id="adjustMinus" type="button">&minus;10%</button>
           <button class="est-mini-btn" id="adjustPlus"  type="button">+10%</button>
@@ -382,6 +384,26 @@
         <div class="est-buttons-row">&nbsp;</div>
         <div class="est-value-wrap"><span class="est-derived" id="estMaxBuy">&mdash;</span></div>
         <div class="est-roi-note" id="estRoiNote">&nbsp;</div>
+      </div>
+    </div>
+
+    <div class="estimates-bar" style="margin-top:4px;">
+      <div class="est-cell">
+        <div class="est-label">Cost</div>
+        <div class="est-value-wrap">
+          <span class="est-prefix">$</span><input type="number" id="estCost" step="0.01" min="0" inputmode="decimal">
+        </div>
+      </div>
+      <div class="est-cell">
+        <div class="est-label">Tax + BP</div>
+        <div class="est-value-wrap">
+          <span class="est-prefix">$</span><input type="number" id="estTaxBp" step="0.01" min="0" inputmode="decimal">
+        </div>
+      </div>
+      <div class="est-cell derived">
+        <div class="est-label">Projected Profit</div>
+        <div class="est-value-wrap"><span class="est-derived" id="estProfit">&mdash;</span></div>
+        <div class="est-roi-note" id="estProfitNote">&nbsp;</div>
       </div>
     </div>
 
@@ -472,7 +494,8 @@ function defaultFields() {
     itemTokens:  [], itemActive:  [],
     adjTokens:   [], adjActive:   [],
     notes: "", confidence: "",
-    value: null, str: null
+    value: null, str: null,
+    cost: null, taxBp: null
   };
 }
 
@@ -547,7 +570,7 @@ function numOr(v, fallback) {
 }
 $("settingsBtn").addEventListener("click", function() { loadSettings(); show($("settings")); });
 $("closeSettingsBtn").addEventListener("click", function() { hide($("settings")); });
-$("saveSettingsBtn").addEventListener("click", function() { saveSettings(); hide($("settings")); updateMaxBuy(); });
+$("saveSettingsBtn").addEventListener("click", function() { saveSettings(); hide($("settings")); updateEstimates(); });
 if (!localStorage.getItem(LS_KEY)) { loadSettings(); show($("settings")); }
 
 function loadHintState() {
@@ -969,11 +992,24 @@ function updateLinks() {
   $("linkWorthpoint").href = "https://www.worthpoint.com/inventory/search?categories=&query=" + q;
 }
 
-/* Estimates bar: Value, STR, Max Buy */
+/* Estimates bars: Sale Price / STR / Max Buy   +   Cost / Tax+BP / Projected Profit */
 function renderEstimatesBar() {
   $("estValue").value = fields.value != null ? fields.value : "";
   $("estStr").value   = fields.str   != null ? fields.str   : "";
-  updateMaxBuy();
+  $("estCost").value  = fields.cost  != null ? fields.cost  : "";
+  $("estTaxBp").value = fields.taxBp != null ? fields.taxBp : "";
+  updateEstimates();
+}
+function readEstInputs() {
+  var parse = function(s) {
+    if (s === "" || s == null) return null;
+    var n = Number(s);
+    return isFinite(n) ? n : null;
+  };
+  fields.value = parse($("estValue").value);
+  fields.str   = parse($("estStr").value);
+  fields.cost  = parse($("estCost").value);
+  fields.taxBp = parse($("estTaxBp").value);
 }
 function roiForStr(str) {
   var m = getRoiMatrix();
@@ -983,14 +1019,19 @@ function roiForStr(str) {
   }
   return m.tiers[m.tiers.length - 1].roi;
 }
+function feeOnSale(value) {
+  var m = getRoiMatrix();
+  var fvf   = Number(m.fees.fvf)       || 0;
+  var promo = Number(m.fees.promoted)  || 0;
+  var per   = Number(m.fees.per_order) || 0;
+  return value * ((fvf + promo) / 100) + per;
+}
+function updateEstimates() {
+  readEstInputs();
+  updateMaxBuy();
+  updateProfit();
+}
 function updateMaxBuy() {
-  var vRaw = $("estValue").value;
-  var sRaw = $("estStr").value;
-  var value = vRaw === "" ? null : Number(vRaw);
-  var str   = sRaw === "" ? null : Number(sRaw);
-  fields.value = (value != null && isFinite(value)) ? value : null;
-  fields.str   = (str   != null && isFinite(str))   ? str   : null;
-
   var mb = $("estMaxBuy");
   var note = $("estRoiNote");
   if (fields.value == null || fields.value <= 0) {
@@ -998,13 +1039,8 @@ function updateMaxBuy() {
     note.innerHTML = "&nbsp;";
     return;
   }
-  var m = getRoiMatrix();
-  var fvf   = Number(m.fees.fvf)       || 0;
-  var promo = Number(m.fees.promoted)  || 0;
-  var per   = Number(m.fees.per_order) || 0;
-  var roi   = roiForStr(fields.str);
-  var feePct = (fvf + promo) / 100;
-  var net = fields.value - (fields.value * feePct) - per;
+  var net = fields.value - feeOnSale(fields.value);
+  var roi = roiForStr(fields.str);
   var maxBuy = net / (1 + roi / 100);
   if (!isFinite(maxBuy) || maxBuy <= 0) {
     mb.textContent = "\u2014";
@@ -1014,8 +1050,38 @@ function updateMaxBuy() {
   mb.textContent = "$" + maxBuy.toFixed(2);
   note.textContent = "ROI " + roi + "%";
 }
-$("estValue").addEventListener("input", updateMaxBuy);
-$("estStr").addEventListener("input",   updateMaxBuy);
+function updateProfit() {
+  var span = $("estProfit");
+  var note = $("estProfitNote");
+  span.classList.remove("negative");
+  note.classList.remove("negative");
+  if (fields.value == null || fields.value <= 0) {
+    span.textContent = "\u2014";
+    note.innerHTML = "&nbsp;";
+    return;
+  }
+  var cost  = fields.cost  != null ? fields.cost  : 0;
+  var taxBp = fields.taxBp != null ? fields.taxBp : 0;
+  var profit = fields.value - feeOnSale(fields.value) - cost - taxBp;
+  if (!isFinite(profit)) {
+    span.textContent = "\u2014";
+    note.innerHTML = "&nbsp;";
+    return;
+  }
+  var prefix = profit < 0 ? "\u2212$" : "$";  // U+2212 minus sign
+  span.textContent = prefix + Math.abs(profit).toFixed(2);
+  if (profit < 0) { span.classList.add("negative"); note.classList.add("negative"); }
+  if (cost > 0) {
+    var roiActual = (profit / cost) * 100;
+    note.textContent = "ROI " + (isFinite(roiActual) ? roiActual.toFixed(0) : "\u2014") + "%";
+  } else {
+    note.innerHTML = "&nbsp;";
+  }
+}
+$("estValue").addEventListener("input", updateEstimates);
+$("estStr").addEventListener("input",   updateEstimates);
+$("estCost").addEventListener("input",  updateEstimates);
+$("estTaxBp").addEventListener("input", updateEstimates);
 
 /* Value +/- 10% buttons — compound (each press multiplies by 1 +/- 0.10) */
 function adjustValue(pctDelta) {
@@ -1023,7 +1089,7 @@ function adjustValue(pctDelta) {
   if (!isFinite(cur) || cur <= 0) return;
   var adjusted = cur * (1 + pctDelta / 100);
   $("estValue").value = adjusted.toFixed(2);
-  updateMaxBuy();
+  updateEstimates();
 }
 $("adjustMinus").addEventListener("click", function() { adjustValue(-10); });
 $("adjustPlus").addEventListener("click",  function() { adjustValue(10);  });
@@ -1044,7 +1110,7 @@ function stepStr(direction) {
     : Math.min(m.tiers.length - 1, curIdx + 1);
   if (newIdx === curIdx) return;
   $("estStr").value = m.tiers[newIdx].str;
-  updateMaxBuy();
+  updateEstimates();
 }
 $("strUp").addEventListener("click",   function() { stepStr("up"); });
 $("strDown").addEventListener("click", function() { stepStr("down"); });
@@ -1058,8 +1124,14 @@ $("startOverBtn").addEventListener("click", function() {
   $("negTerms").value = "";
   $("estValue").value = "";
   $("estStr").value   = "";
+  $("estCost").value  = "";
+  $("estTaxBp").value = "";
   $("estMaxBuy").textContent = "\u2014";
   $("estRoiNote").innerHTML = "&nbsp;";
+  $("estProfit").textContent = "\u2014";
+  $("estProfit").classList.remove("negative");
+  $("estProfitNote").innerHTML = "&nbsp;";
+  $("estProfitNote").classList.remove("negative");
   renderPhotos();
   updateIdentifyButton();
   hide($("result"));
@@ -1143,6 +1215,7 @@ $("saveHistoryBtn").addEventListener("click", async function() {
   try {
     var thumb = await makeThumbnail(photos[0].dataUrl, 200);
     var maxBuyText = $("estMaxBuy").textContent;
+    var profitText = $("estProfit").textContent;
     var entry = {
       timestamp:  Date.now(),
       // active-only strings (for search + display)
@@ -1160,7 +1233,10 @@ $("saveHistoryBtn").addEventListener("click", async function() {
       confidence: fields.confidence,
       value:      fields.value,
       str:        fields.str,
+      cost:       fields.cost,
+      taxBp:      fields.taxBp,
       maxBuy:     maxBuyText && maxBuyText !== "\u2014" ? maxBuyText : "",
+      profit:     profitText && profitText !== "\u2014" ? profitText : "",
       modelUsed:  lastModelUsed || "",
       notes:      $("resultNotes").value.trim(),
       hint:       ($("hintText").value.trim() || lastHintUsed || ""),
@@ -1333,9 +1409,12 @@ async function openHistDetail(id) {
     ["Item",        entry.item],
     ["Adjectives",  entry.adjectives],
     ["Excluded",    entry.negTerms],
-    ["Est. value",  entry.value != null ? "$" + Number(entry.value).toFixed(2) : ""],
+    ["Sale price",  entry.value != null ? "$" + Number(entry.value).toFixed(2) : ""],
     ["STR",         entry.str   != null ? entry.str + "%" : ""],
     ["Max buy",     entry.maxBuy || ""],
+    ["Cost",        entry.cost  != null ? "$" + Number(entry.cost).toFixed(2)  : ""],
+    ["Tax + BP",    entry.taxBp != null ? "$" + Number(entry.taxBp).toFixed(2) : ""],
+    ["Profit",      entry.profit || ""],
     ["Hint used",   entry.hint],
     ["Model used",  entry.modelUsed ? (entry.modelUsed.indexOf("opus") !== -1 ? "Opus" : entry.modelUsed) : ""]
   ];
