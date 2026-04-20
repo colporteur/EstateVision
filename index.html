@@ -1575,6 +1575,11 @@ $("openSaveGroupPickerBtn").addEventListener("click", async function() {
       '<span class="pg-count">' + (g.items ? g.items.length : 0) + ' items</span>';
     b.addEventListener("click", async function() {
       hide($("saveGroupPicker"));
+      // Picking from the "save to different group" picker also switches the active group
+      // so subsequent single-tap saves go to the same place. saveToGroup's setTimeout
+      // calls updateSaveToGroupLabel() after its "Saved to ..." flash clears, which
+      // will pick up the new active group name automatically.
+      setActiveGroupId(g.id);
       await saveToGroup(g.id);
     });
     list.appendChild(b);
