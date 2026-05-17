@@ -132,7 +132,61 @@
     line-height: 1;
   }
   .photo .save-btn:active { background: rgba(59,130,246,0.85); }
+  .photo .rot-btn {
+    position: absolute; bottom: 4px; right: 4px;
+    background: rgba(0,0,0,0.75); color: white; border: none;
+    width: 26px; height: 26px; border-radius: 13px;
+    font-size: 15px; padding: 0; margin: 0;
+    display: flex; align-items: center; justify-content: center;
+    line-height: 1;
+  }
+  .photo .rot-btn:active { background: rgba(180,180,180,0.85); color: #111; }
   .photo-count { font-size: 0.8em; color: #888; margin: 4px 0 8px; }
+
+  /* Background-identify queue */
+  .job-queue-head {
+    font-size: 0.75em; color: #888; text-transform: uppercase; letter-spacing: 0.06em;
+    margin-bottom: 6px;
+  }
+  .job-row {
+    display: flex; gap: 10px; align-items: center;
+    padding: 8px; background: #222; border: 1px solid #333;
+    border-radius: 8px; margin-bottom: 6px;
+  }
+  .job-row.done { border-color: #305030; background: #1f2a1f; cursor: pointer; }
+  .job-row.done:active { background: #2a3a2a; }
+  .job-row.error { border-color: #5a2f2f; background: #2a1f1f; cursor: pointer; }
+  .job-row.error:active { background: #3a2a2a; }
+  .job-row.running { border-color: #2a4570; background: #1a2238; }
+  .job-row.open    { border-color: #3b82f6; }
+  .job-thumb {
+    width: 44px; height: 44px; border-radius: 6px; flex-shrink: 0;
+    background: #0f0f0f; object-fit: cover;
+  }
+  .job-meta { flex: 1; min-width: 0; }
+  .job-label {
+    font-size: 0.9em; color: #e8e8e8;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .job-status {
+    font-size: 0.72em; color: #aaa; margin-top: 2px;
+    text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .job-status.running { color: #aac8ff; }
+  .job-status.done    { color: #9fd89f; }
+  .job-status.error   { color: #d89f9f; }
+  .job-status .mini-spin {
+    display: inline-block; width: 10px; height: 10px;
+    border: 2px solid #444; border-top-color: #aac8ff;
+    border-radius: 50%; animation: spin 0.8s linear infinite;
+    margin-right: 5px; vertical-align: middle;
+  }
+  .job-x {
+    background: #2a2a2a; border: 1px solid #444; color: #888;
+    width: 28px; height: 28px; border-radius: 14px; padding: 0;
+    margin: 0; font-size: 1.1em; line-height: 1; flex-shrink: 0;
+  }
+  .job-x:active { background: #3a1f1f; color: #ff8888; }
 
   .hint-label-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
   .hint-pin { font-size: 1em; color: #555; transition: color 0.15s; }
@@ -450,6 +504,12 @@
 
   <div class="section">
     <button class="primary" id="identifyBtn" disabled>Identify Item</button>
+    <div class="footnote" style="margin-top:-2px;">Tap to send. Photos clear instantly so you can prep the next item while this one runs.</div>
+  </div>
+
+  <div id="jobQueue" class="section hidden">
+    <div class="job-queue-head" id="jobQueueHead">In progress</div>
+    <div id="jobQueueList"></div>
   </div>
 
   <div id="loading" class="section loading hidden"><span class="spinner"></span>Identifying&hellip;</div>
@@ -693,6 +753,15 @@ var photos = [];
 var fields = defaultFields();
 var currentHistoryId = null;
 var lastModelUsed = null;
+
+/* Background identify queue. Each job snapshots the photos + hint + model that
+ * were on screen when the user tapped Identify. The main view clears
+ * immediately so the user can start the next item; jobs complete in the
+ * background and post their results into the queue UI for review. */
+var jobs = [];          // { id, status, label, thumbDataUrl, photos, hint, model,
+                        //   startedAt, finishedAt, result, error }
+var jobSeq = 0;
+var currentJobId = null;  // job whose result is currently loaded in the main view
 var lastHintUsed  = "";
 
 function getRoiMatrix() {
@@ -790,6 +859,21 @@ $("libraryInput").addEventListener("change", function(e) { handleFiles(e.target.
 $("clearPhotosBtn").addEventListener("click", clearPhotos);
 
 async function handleFiles(fileList) {
+  // If the user was reviewing a finished queue job and now adds new photos,
+  // they're starting the next item. Detach from the open job and clear the
+  // result panel so we don't accidentally merge the prior job's photos into
+  // the next identify call.
+  if (currentJobId != null) {
+    currentJobId = null;
+    photos = [];
+    fields = defaultFields();
+    fields.taxBpPct = getStickyTaxBpPct();
+    lastModelUsed = null;
+    lastHintUsed  = "";
+    hide($("result"));
+    hide($("error"));
+    renderJobQueue();
+  }
   var files = Array.from(fileList);
   for (var i = 0; i < files.length; i++) {
     if (photos.length >= 10) { showError("Max 10 photos per item."); break; }
@@ -839,6 +923,16 @@ function renderPhotos() {
     });
     cell.appendChild(s);
 
+    var r = document.createElement("button");
+    r.className = "rot-btn";
+    r.innerHTML = "&#10227;";  // clockwise rotation arrow
+    r.setAttribute("aria-label", "Rotate photo 90 degrees clockwise");
+    r.addEventListener("click", function(e) {
+      e.stopPropagation();
+      rotatePhotoCW(idx);
+    });
+    cell.appendChild(r);
+
     var x = document.createElement("button");
     x.className = "x-btn";
     x.innerHTML = "&times;";
@@ -852,6 +946,47 @@ function renderPhotos() {
     cell.appendChild(x);
     grid.appendChild(cell);
   });
+}
+
+/* Rotate a photo 90 degrees clockwise. Re-encodes the downscaled JPEG so Claude
+ * sees the corrected orientation, and rebuilds the .original File from the
+ * rotated bytes so Save-to-Phone reflects the rotation. */
+function rotatePhotoCW(idx) {
+  if (idx < 0 || idx >= photos.length) return;
+  var p = photos[idx];
+  if (!p || !p.dataUrl) return;
+  var img = new Image();
+  img.onload = function() {
+    var canvas = document.createElement("canvas");
+    // 90deg rotation: swap width <-> height
+    canvas.width  = img.height;
+    canvas.height = img.width;
+    var ctx = canvas.getContext("2d");
+    ctx.translate(canvas.width, 0);
+    ctx.rotate(Math.PI / 2);
+    ctx.drawImage(img, 0, 0);
+    var dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+    var base64 = dataUrl.split(",")[1];
+    photos[idx] = {
+      dataUrl:   dataUrl,
+      base64:    base64,
+      mediaType: "image/jpeg",
+      // Replace .original with the rotated bytes; the saved/exported copy
+      // should be the same orientation the user is now seeing.
+      original:  dataUrlToFile(dataUrl, photoSaveName(idx))
+    };
+    renderPhotos();
+  };
+  img.onerror = function() { showError("Couldn't rotate that photo."); };
+  img.src = p.dataUrl;
+}
+
+function photoSaveName(idx) {
+  var ts = new Date();
+  var pad = function(v) { return String(v).padStart(2, "0"); };
+  return "item-id-" + ts.getFullYear() + pad(ts.getMonth()+1) + pad(ts.getDate()) +
+         "-" + pad(ts.getHours()) + pad(ts.getMinutes()) + pad(ts.getSeconds()) +
+         "-" + (idx + 1) + ".jpg";
 }
 
 function updateIdentifyButton() {
@@ -964,7 +1099,7 @@ $("savePhotosBtn").addEventListener("click", function() {
   savePhotosToDevice(idxs);
 });
 
-$("identifyBtn").addEventListener("click", function() { identify(); });
+$("identifyBtn").addEventListener("click", function() { enqueueIdentifyJob(); });
 $("askOpusBtn").addEventListener("click", function() { identify("claude-opus-4-6"); });
 
 var PROMPT_BASE = "You are identifying an item in a photo (or multiple photos of the same item) for resale research on eBay and WorthPoint.\n\n" +
@@ -1032,6 +1167,243 @@ async function identify(modelOverride) {
     hide($("loading"));
     updateIdentifyButton();
   }
+}
+
+/* ============================================================
+ * Background identify queue
+ *
+ * - enqueueIdentifyJob(): snapshots photos+hint+model, clears the working
+ *   view, starts the API call in the background.
+ * - runJob(): the actual API call; updates job status when done/errored.
+ * - openJob(): when the user taps a finished job, load its snapshot back
+ *   into the main view (photos, hint, model, result panel) for review/save.
+ * - dismissJob(): removes a job from the queue (manual X or auto on
+ *   Save-to-History / Save-to-Group / Start Over).
+ * ============================================================ */
+
+async function enqueueIdentifyJob() {
+  var key = localStorage.getItem(LS_KEY);
+  if (!key) {
+    showError("Set your Anthropic API key in ⚙ first.");
+    show($("settings"));
+    return;
+  }
+  if (photos.length === 0) return;
+
+  var model = localStorage.getItem(LS_MODEL) || "claude-sonnet-4-6";
+  var hint  = $("hintText").value;
+
+  // Snapshot photos + label + a thumbnail for the queue row.
+  var photosSnapshot = photos.slice();  // shallow copy; File refs stay shared
+  var labelBase = (hint && hint.trim()) ? hint.trim() : ("Item #" + (jobSeq + 1));
+  if (labelBase.length > 60) labelBase = labelBase.slice(0, 57) + "…";
+
+  var thumb = "";
+  try { thumb = await makeThumbnail(photosSnapshot[0].dataUrl, 88); }
+  catch (e) { /* thumb is optional */ }
+
+  var job = {
+    id:           ++jobSeq,
+    status:       "pending",
+    label:        labelBase,
+    thumbDataUrl: thumb,
+    photos:       photosSnapshot,
+    hint:         hint,
+    model:        model,
+    startedAt:    Date.now(),
+    finishedAt:   null,
+    result:       null,
+    error:        null
+  };
+  jobs.push(job);
+
+  // Clear the working view immediately so the user can prep the next item.
+  // We don't touch the currently-visible result panel — that may belong to a
+  // previously-opened job and the user may still be reviewing it.
+  photos = [];
+  fields = defaultFields();
+  fields.taxBpPct = getStickyTaxBpPct();
+  if (!$("stickyHint").checked) $("hintText").value = "";
+  hide($("error"));
+  renderPhotos();
+  updateIdentifyButton();
+  renderJobQueue();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+
+  // Fire and forget. Errors are captured into the job object.
+  runJob(job);
+}
+
+async function runJob(job) {
+  job.status = "running";
+  renderJobQueue();
+  var key = localStorage.getItem(LS_KEY);
+  try {
+    var data = await callClaude(key, job.model, job.photos, job.hint);
+    job.result = data;
+    job.status = "done";
+    // If the result has identifiable terms, upgrade the label so the queue
+    // row is more recognizable than "Item #3".
+    var niceLabel = niceLabelFromResult(data);
+    if (niceLabel) job.label = niceLabel;
+  } catch (e) {
+    job.error  = e.message || String(e);
+    job.status = "error";
+  } finally {
+    job.finishedAt = Date.now();
+    renderJobQueue();
+  }
+}
+
+function niceLabelFromResult(d) {
+  if (!d) return "";
+  var parts = [];
+  if (d.model) parts.push(String(d.model).trim());
+  if (d.brand) parts.push(String(d.brand).trim());
+  if (d.item)  parts.push(String(d.item).trim());
+  var s = parts.filter(Boolean).join(" ").trim();
+  if (!s) return "";
+  if (s.length > 60) s = s.slice(0, 57) + "…";
+  return s;
+}
+
+function openJob(jobId) {
+  var job = jobById(jobId);
+  if (!job) return;
+  if (job.status !== "done" && job.status !== "error") return;
+
+  currentJobId = job.id;
+
+  // Restore the snapshot so the result panel + photo grid + hint match what
+  // produced this job. Use a copied array so live edits don't mutate the job.
+  photos = job.photos.slice();
+  lastModelUsed = job.model;
+  lastHintUsed  = job.hint;
+  $("hintText").value = job.hint || "";
+  fields = defaultFields();
+  fields.taxBpPct = getStickyTaxBpPct();
+  $("negTerms").value = "";
+  $("estValue").value = "";
+  $("estStr").value   = "";
+  $("estCost").value  = "";
+  $("estTaxBpPct").value = fields.taxBpPct;
+  $("estMaxBuy").textContent = "—";
+  $("estRoiNote").innerHTML = "&nbsp;";
+  $("estProfit").textContent = "—";
+  $("estProfit").classList.remove("negative");
+  $("estProfitNote").innerHTML = "&nbsp;";
+  $("estProfitNote").classList.remove("negative");
+  $("query").value = "";
+  $("resultNotes").value = "";
+
+  renderPhotos();
+  updateIdentifyButton();
+
+  if (job.status === "error") {
+    hide($("result"));
+    showError(job.error || "Identify failed.");
+  } else {
+    hide($("error"));
+    populateResult(job.result);
+    show($("result"));
+    var sb = $("saveHistoryBtn");
+    sb.innerHTML = "&#128190; Save to History";
+    sb.classList.remove("saved-flash");
+    sb.disabled = false;
+    window.scrollTo({ top: $("result").offsetTop - 10, behavior: "smooth" });
+  }
+
+  renderJobQueue();
+}
+
+function dismissJob(jobId) {
+  for (var i = 0; i < jobs.length; i++) {
+    if (jobs[i].id === jobId) { jobs.splice(i, 1); break; }
+  }
+  if (currentJobId === jobId) currentJobId = null;
+  renderJobQueue();
+}
+
+function jobById(id) {
+  for (var i = 0; i < jobs.length; i++) {
+    if (jobs[i].id === id) return jobs[i];
+  }
+  return null;
+}
+
+function renderJobQueue() {
+  var section = $("jobQueue");
+  var list    = $("jobQueueList");
+  var head    = $("jobQueueHead");
+  if (jobs.length === 0) { hide(section); list.innerHTML = ""; return; }
+  show(section);
+
+  var nRunning = 0, nDone = 0, nErr = 0;
+  jobs.forEach(function(j) {
+    if (j.status === "running" || j.status === "pending") nRunning++;
+    else if (j.status === "done")  nDone++;
+    else if (j.status === "error") nErr++;
+  });
+  var parts = [];
+  if (nRunning) parts.push(nRunning + " running");
+  if (nDone)    parts.push(nDone + " ready to review");
+  if (nErr)     parts.push(nErr + " failed");
+  head.textContent = parts.join(" · ") || "Identifications";
+
+  list.innerHTML = "";
+  jobs.forEach(function(j) {
+    var row = document.createElement("div");
+    var cls = "job-row " + j.status;
+    if (j.id === currentJobId) cls += " open";
+    row.className = cls;
+
+    if (j.thumbDataUrl) {
+      var t = document.createElement("img");
+      t.className = "job-thumb";
+      t.src = j.thumbDataUrl;
+      t.alt = "";
+      row.appendChild(t);
+    } else {
+      var ph = document.createElement("div");
+      ph.className = "job-thumb";
+      row.appendChild(ph);
+    }
+
+    var meta = document.createElement("div");
+    meta.className = "job-meta";
+    var labelEl = document.createElement("div");
+    labelEl.className = "job-label";
+    labelEl.textContent = j.label;
+    meta.appendChild(labelEl);
+    var statusEl = document.createElement("div");
+    statusEl.className = "job-status " + j.status;
+    if (j.status === "running" || j.status === "pending") {
+      statusEl.innerHTML = '<span class="mini-spin"></span>Identifying…';
+    } else if (j.status === "done") {
+      statusEl.textContent = "✓ Tap to review";
+    } else if (j.status === "error") {
+      statusEl.textContent = "× Failed — tap for details";
+    }
+    meta.appendChild(statusEl);
+    row.appendChild(meta);
+
+    if (j.status === "done" || j.status === "error") {
+      row.addEventListener("click", function() { openJob(j.id); });
+    }
+
+    var x = document.createElement("button");
+    x.type = "button";
+    x.className = "job-x";
+    x.innerHTML = "&times;";
+    x.setAttribute("aria-label", "Dismiss");
+    x.addEventListener("click", function(e) {
+      e.stopPropagation();
+      dismissJob(j.id);
+    });
+    row.appendChild(x);
+
+    list.appendChild(row);
+  });
 }
 
 async function callClaude(apiKey, model, photosList, hint) {
@@ -1325,6 +1697,9 @@ $("strUp").addEventListener("click",   function() { stepStr("up"); });
 $("strDown").addEventListener("click", function() { stepStr("down"); });
 
 $("startOverBtn").addEventListener("click", function() {
+  // If we were reviewing a finished queue job, dismiss it now — the user is
+  // done with it.
+  if (currentJobId != null) { dismissJob(currentJobId); currentJobId = null; }
   photos = [];
   fields = defaultFields();
   lastModelUsed = null;
@@ -1526,6 +1901,8 @@ async function saveToGroup(groupId) {
     await groupsAddItem(groupId, snap);
     var g = await groupsGet(groupId);
     var savedName = g ? g.name : ("Table " + groupId);
+    // Saved \u2014 drop the open queue job (if any) from the queue.
+    if (currentJobId != null) { dismissJob(currentJobId); currentJobId = null; }
     btn.innerHTML = "\u2713 Saved to " + savedName;
     btn.classList.add("saved-flash");
     setTimeout(function() {
@@ -1630,6 +2007,8 @@ $("saveHistoryBtn").addEventListener("click", async function() {
     };
     await dbAdd(entry);
     $("resultNotes").value = "";
+    // Saved — the open queue job (if any) is now archived, drop it.
+    if (currentJobId != null) { dismissJob(currentJobId); currentJobId = null; }
     btn.innerHTML = "&#10003; Saved";
     btn.classList.add("saved-flash");
     setTimeout(function() {
