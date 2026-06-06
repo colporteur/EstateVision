@@ -407,6 +407,58 @@
   }
   .est-mini-btn:active { background: #2a2a2a; }
 
+  /* Send-to-Agent button + agent result rows */
+  .agent-btn {
+    background: #2a3a5a; border-color: #4570a0; color: #d0e2ff;
+    font-weight: 600;
+  }
+  .agent-btn:active { background: #3a4a6a; }
+  .agent-btn:hover  { background: #3a4a6a; }
+  .agent-btn.sent {
+    background: #1f3a1f; border-color: #305030; color: #9fd89f; cursor: default;
+  }
+  .agent-btn.sent:active, .agent-btn.sent:hover { background: #1f3a1f; }
+  .agent-btn.error {
+    background: #3a1f1f; border-color: #5a2f2f; color: #ffaaaa;
+  }
+  .agent-row {
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+    margin-top: 4px; font-size: 0.8em;
+    padding: 6px 8px;
+    background: #1a2238; border: 1px solid #2a3550; border-radius: 6px;
+  }
+  .agent-row.running { background: #1a2238; border-color: #2a4570; color: #aac8ff; }
+  .agent-row.done    { background: #1a2a1a; border-color: #2a4a2a; color: #cfe8cf; }
+  .agent-row.error   { background: #2a1f1f; border-color: #4a2f2f; color: #d89f9f; }
+  .agent-row.none    { background: #222; border-color: #333; color: #888; }
+  .agent-row-label {
+    text-transform: uppercase; font-size: 0.85em; letter-spacing: 0.06em; color: #888;
+    margin-right: 2px;
+  }
+  .agent-row.done .agent-row-label { color: #6f9f6f; }
+  .agent-row.error .agent-row-label { color: #9f6f6f; }
+  .agent-row.running .agent-row-label { color: #6f8fbf; }
+  .agent-price-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: #2a3a5a; border: 1px solid #4570a0; color: #d0e2ff;
+    padding: 4px 10px; border-radius: 14px;
+    font-weight: 600; cursor: pointer; font-size: 0.95em;
+  }
+  .agent-price-chip:active { background: #3a4a6a; }
+  .agent-price-chip.selected { background: #4570a0; color: white; }
+  .agent-price-chip.median { background: #2a4a2a; border-color: #4a7050; color: #cfe8cf; }
+  .agent-price-chip.median.selected { background: #4a7050; color: white; }
+  .agent-meta {
+    font-size: 0.78em; color: #999;
+    flex-basis: 100%; margin-top: 2px;
+  }
+  .agent-mini-spin {
+    display: inline-block; width: 10px; height: 10px;
+    border: 2px solid #444; border-top-color: #aac8ff;
+    border-radius: 50%; animation: spin 0.8s linear infinite;
+    margin-right: 4px; vertical-align: middle;
+  }
+
   /* Settings: ROI matrix */
   .settings-subhead {
     font-size: 0.8em; color: #888; text-transform: uppercase; letter-spacing: 0.06em;
@@ -462,6 +514,16 @@
     <div><label>Per-order fee ($)</label><input type="number" id="feePerOrder" step="0.01"></div>
     <div></div>
   </div>
+
+  <div class="settings-subhead">Agent Price Researcher</div>
+  <div class="footnote" style="margin-top:0; margin-bottom:8px;">
+    Optional. Sends a saved item to your local agent for deep eBay sold-comp research; the median &amp; 75th-percentile prices come back later and attach to the item.
+  </div>
+  <label for="agentBaseUrl">Agent API base URL</label>
+  <input type="text" id="agentBaseUrl" placeholder="https://your-tunnel.trycloudflare.com" autocomplete="off" spellcheck="false" autocapitalize="none" autocorrect="off">
+  <label for="agentApiKey">Agent API key (X-API-Key)</label>
+  <input type="password" id="agentApiKey" placeholder="value of INTERNAL_API_KEY from .env" autocomplete="off" spellcheck="false">
+  <div class="footnote" style="margin-top:-2px;">Leave blank to hide the &ldquo;Send to Agent&rdquo; button.</div>
 
   <div class="row" style="margin-top:12px;">
     <button class="primary" id="saveSettingsBtn">Save</button>
@@ -605,6 +667,11 @@
       <textarea id="resultNotes" placeholder="e.g., '$25 comps on eBay, max buy $8'"></textarea>
     </div>
 
+    <button class="agent-btn hidden" id="sendToAgentBtn">&#129302; Send to Agent</button>
+    <div class="footnote agent-footnote hidden" id="sendToAgentFootnote" style="margin-top:-2px;">
+      Sends the search query, notes, and photos to your local Agent Price Researcher. Results attach to whichever item you save it as (History or Group) and appear there once the agent finishes (~1-3 min).
+    </div>
+
     <button class="primary" id="saveHistoryBtn">&#128190; Save to History</button>
 
     <button class="primary save-to-group-btn" id="saveToGroupBtn">&#128193; Save to <span id="saveToGroupName">Table 1</span></button>
@@ -700,6 +767,8 @@ var LS_STICKY = "itemid.sticky";
 var LS_ROI    = "itemid.roiMatrix";
 var LS_TAXBP  = "itemid.taxBpPct";
 var LS_ACTIVE_GROUP = "itemid.activeGroup";
+var LS_AGENT_URL = "itemid.agentBaseUrl";
+var LS_AGENT_KEY = "itemid.agentApiKey";
 var TAXBP_DEFAULT = 10;
 var GROUP_COUNT = 14;
 
@@ -754,6 +823,12 @@ var fields = defaultFields();
 var currentHistoryId = null;
 var lastModelUsed = null;
 
+/* Transient handle for the current item's Send-to-Agent submission. Set when
+ * the user taps "Send to Agent" from the result panel, cleared when the user
+ * starts over or starts a new item. Attached to whatever save (Group, History)
+ * happens next so we can poll the agent later and stitch results back in. */
+var pendingAgent = null;  // { jobId, submittedAt, title }
+
 /* Background identify queue. Each job snapshots the photos + hint + model that
  * were on screen when the user tapped Identify. The main view clears
  * immediately so the user can start the next item; jobs complete in the
@@ -803,6 +878,8 @@ function loadSettings() {
   $("feeFvf").value      = m.fees.fvf;
   $("feePromo").value    = m.fees.promoted;
   $("feePerOrder").value = m.fees.per_order;
+  $("agentBaseUrl").value = localStorage.getItem(LS_AGENT_URL) || "";
+  $("agentApiKey").value  = localStorage.getItem(LS_AGENT_KEY) || "";
 }
 function saveSettings() {
   localStorage.setItem(LS_KEY, $("apikey").value.trim());
@@ -822,6 +899,35 @@ function saveSettings() {
     }
   };
   localStorage.setItem(LS_ROI, JSON.stringify(matrix));
+  // Normalize the Agent URL: trim, strip trailing slash so we can append /api/v1/... safely.
+  var agentUrl = $("agentBaseUrl").value.trim().replace(/\/+$/, "");
+  localStorage.setItem(LS_AGENT_URL, agentUrl);
+  localStorage.setItem(LS_AGENT_KEY, $("agentApiKey").value.trim());
+  updateAgentButtonVisibility();
+}
+
+function isAgentConfigured() {
+  return !!(localStorage.getItem(LS_AGENT_URL) && localStorage.getItem(LS_AGENT_KEY));
+}
+
+function agentBaseUrl() {
+  return (localStorage.getItem(LS_AGENT_URL) || "").replace(/\/+$/, "");
+}
+function agentApiKey() {
+  return localStorage.getItem(LS_AGENT_KEY) || "";
+}
+
+function updateAgentButtonVisibility() {
+  var btn = $("sendToAgentBtn");
+  var foot = $("sendToAgentFootnote");
+  if (!btn) return;
+  if (isAgentConfigured()) {
+    btn.classList.remove("hidden");
+    if (foot) foot.classList.remove("hidden");
+  } else {
+    btn.classList.add("hidden");
+    if (foot) foot.classList.add("hidden");
+  }
 }
 function numOr(v, fallback) {
   var n = Number(v);
@@ -865,6 +971,8 @@ async function handleFiles(fileList) {
   // the next identify call.
   if (currentJobId != null) {
     currentJobId = null;
+    pendingAgent = null;
+    resetSendToAgentButton();
     photos = [];
     fields = defaultFields();
     fields.taxBpPct = getStickyTaxBpPct();
@@ -1223,6 +1331,8 @@ async function enqueueIdentifyJob() {
   photos = [];
   fields = defaultFields();
   fields.taxBpPct = getStickyTaxBpPct();
+  pendingAgent = null;
+  resetSendToAgentButton();
   if (!$("stickyHint").checked) $("hintText").value = "";
   hide($("error"));
   renderPhotos();
@@ -1404,6 +1514,287 @@ function renderJobQueue() {
 
     list.appendChild(row);
   });
+}
+
+/* ============================================================
+ * Send to Agent Price Researcher
+ *
+ * Submits the current item (search query + notes + photos) to the local agent
+ * API. Returns immediately with a job_id; the actual research takes 1-3 min
+ * and is picked up later by the background poller (pollAgentJobs).
+ * ============================================================ */
+
+async function sendToAgent() {
+  if (photos.length === 0) return;
+  if (!isAgentConfigured()) {
+    showError("Set the Agent API base URL and key in ⚙ first.");
+    show($("settings"));
+    return;
+  }
+  var btn = $("sendToAgentBtn");
+  if (!btn || btn.disabled) return;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="agent-mini-spin"></span>Submitting…';
+
+  // Build title: prefer the user-edited search query (it's the eBay search the
+  // user actually wants), fall back to active tokens if the box is empty.
+  var title = ($("query").value || "").trim();
+  if (!title) {
+    var parts = []
+      .concat(activeTokens(fields.modelTokens, fields.modelActive))
+      .concat(activeTokens(fields.brandTokens, fields.brandActive))
+      .concat(activeTokens(fields.itemTokens,  fields.itemActive));
+    title = parts.join(" ").trim();
+  }
+  if (!title) title = "Unknown item";
+
+  var description = ($("resultNotes").value || "").trim();
+  // Strip the "data:image/jpeg;base64," prefix — the API accepts raw base64.
+  var images = photos.map(function(p) {
+    return (p.dataUrl || "").replace(/^data:[^,]+,/, "");
+  }).filter(Boolean);
+
+  // Idempotency key: make it unique per submission so distinct items with the
+  // same title don't dedupe to the first one's cached result. The user can
+  // re-submit the same item later (different sale) and get fresh research.
+  var idempotencyKey = "itemid-pwa-" + Date.now() + "-" + Math.random().toString(36).slice(2, 10);
+
+  var body = {
+    title:           title,
+    description:     description || null,
+    images:          images,
+    condition:       "used",
+    max_tier:        5,
+    client_id:       "item_id_pwa",
+    idempotency_key: idempotencyKey
+  };
+
+  try {
+    var url = agentBaseUrl() + "/api/v1/research";
+    var res = await fetch(url, {
+      method:  "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-Key":    agentApiKey()
+      },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) {
+      var errText = await res.text();
+      throw new Error("Agent API " + res.status + ": " + errText.slice(0, 400));
+    }
+    var data = await res.json();
+    if (!data || !data.job_id) throw new Error("Agent API returned no job_id");
+
+    pendingAgent = {
+      jobId:       data.job_id,
+      submittedAt: Date.now(),
+      title:       title
+    };
+    btn.classList.add("sent");
+    btn.innerHTML = "✓ Sent · researching in background";
+    // Keep the button visually shown but inert until the user starts a new item.
+    // (Start Over / new identify reset it via resetSendToAgentButton().)
+  } catch (e) {
+    btn.classList.add("error");
+    btn.innerHTML = "⚠ Send failed — tap to retry";
+    btn.disabled = false;
+    showError("Send to Agent failed: " + (e.message || e));
+  }
+}
+
+function resetSendToAgentButton() {
+  var btn = $("sendToAgentBtn");
+  if (!btn) return;
+  btn.classList.remove("sent", "error");
+  btn.disabled = false;
+  btn.innerHTML = "\u{1F916} Send to Agent";
+}
+
+/* ============================================================
+ * Background poller for in-flight agent jobs.
+ *
+ * Every AGENT_POLL_MS we scan all History entries + Group items whose
+ * agentStatus is still in-flight, dedupe by jobId, GET each one from the
+ * API, and write back the result. We also re-poll when the tab becomes
+ * visible after being backgrounded.
+ *
+ * To minimize wasted requests we go idle when there's nothing to poll
+ * (the next tick will pick up new submissions automatically).
+ * ============================================================ */
+
+var AGENT_POLL_MS = 30000;          // 30s steady-state cadence
+var AGENT_QUICK_POLL_MS = 4000;     // first poll happens sooner so the user sees movement
+var agentPollerStarted = false;
+var agentPollInFlight  = false;
+var agentLastErrorAt   = 0;
+
+function startAgentPolling() {
+  if (agentPollerStarted) return;
+  agentPollerStarted = true;
+  // First pass shortly after startup so any pre-existing jobs get a status.
+  setTimeout(pollAgentJobsTick, AGENT_QUICK_POLL_MS);
+  setInterval(pollAgentJobsTick, AGENT_POLL_MS);
+  // Also re-poll immediately when the user returns to the tab.
+  document.addEventListener("visibilitychange", function() {
+    if (document.visibilityState === "visible") pollAgentJobsTick();
+  });
+}
+
+async function pollAgentJobsTick() {
+  if (agentPollInFlight) return;
+  if (!isAgentConfigured()) return;
+  // If we just errored, back off for 30s to avoid hammering a down API.
+  if (Date.now() - agentLastErrorAt < 30000) return;
+  agentPollInFlight = true;
+  try {
+    await pollAgentJobs();
+  } catch (e) {
+    agentLastErrorAt = Date.now();
+    // Silent — don't pop up a UI error for a poll failure, the user can re-open
+    // the panel if they're worried.
+  } finally {
+    agentPollInFlight = false;
+  }
+}
+
+function isAgentTerminal(status) {
+  return status === "complete" || status === "failed" || status === "cancelled";
+}
+
+async function pollAgentJobs() {
+  // Collect all in-flight jobs from History + Groups, keyed by jobId.
+  var byJob = {};   // jobId -> { history: [entry], groups: [{groupId, savedAt}] }
+
+  var historyAll;
+  try { historyAll = await dbGetAll(); } catch (e) { historyAll = []; }
+  historyAll.forEach(function(entry) {
+    if (entry && entry.agentJobId && !isAgentTerminal(entry.agentStatus || "queued")) {
+      if (!byJob[entry.agentJobId]) byJob[entry.agentJobId] = { history: [], groups: [] };
+      byJob[entry.agentJobId].history.push(entry);
+    }
+  });
+
+  var groupsAll;
+  try { groupsAll = await groupsGetAll(); } catch (e) { groupsAll = []; }
+  groupsAll.forEach(function(g) {
+    (g.items || []).forEach(function(it) {
+      if (it && it.agentJobId && !isAgentTerminal(it.agentStatus || "queued")) {
+        if (!byJob[it.agentJobId]) byJob[it.agentJobId] = { history: [], groups: [] };
+        byJob[it.agentJobId].groups.push({ groupId: g.id, savedAt: it.savedAt });
+      }
+    });
+  });
+
+  var jobIds = Object.keys(byJob);
+  if (jobIds.length === 0) return;
+
+  // Poll each job. Use Promise.all for parallelism but with a small concurrency
+  // cap by chunking — agent jobs are local, so 4-at-a-time is plenty.
+  var anyUpdated = false;
+  for (var i = 0; i < jobIds.length; i += 4) {
+    var chunk = jobIds.slice(i, i + 4);
+    var results = await Promise.all(chunk.map(function(id) { return fetchAgentJob(id).catch(function() { return null; }); }));
+    for (var j = 0; j < chunk.length; j++) {
+      var jobId = chunk[j];
+      var resp  = results[j];
+      if (!resp) continue;
+      var status = resp.status;
+      // For sticky writes only update the record when status has changed OR a
+      // terminal status arrives. The "queued/running" transition isn't worth
+      // a DB write either way (we'd just rewrite the same row).
+      var refs = byJob[jobId];
+      var updates = buildAgentUpdates(resp);
+      if (updates == null) continue;
+      // Apply to history entries
+      for (var k = 0; k < refs.history.length; k++) {
+        var entry = refs.history[k];
+        applyAgentUpdates(entry, updates);
+        try { await dbPut(entry); anyUpdated = true; } catch (e) {}
+      }
+      // Apply to group items: load group, mutate in place, put back.
+      var groupsToWrite = {};
+      for (var k2 = 0; k2 < refs.groups.length; k2++) {
+        var ref = refs.groups[k2];
+        var g = await groupsGet(ref.groupId);
+        if (!g || !Array.isArray(g.items)) continue;
+        var it = g.items.find(function(x) { return x.savedAt === ref.savedAt; });
+        if (!it) continue;
+        applyAgentUpdates(it, updates);
+        groupsToWrite[g.id] = g;
+      }
+      for (var gid in groupsToWrite) {
+        try { await groupsPut(groupsToWrite[gid]); anyUpdated = true; } catch (e) {}
+      }
+      // Suppress unused-var warning
+      if (status) { /* ack */ }
+    }
+  }
+
+  // If anything changed and the user is currently viewing the Group detail or
+  // History list, refresh that view so they see the new prices live.
+  if (anyUpdated) refreshIfShowingSavedView();
+}
+
+function buildAgentUpdates(resp) {
+  // Translate the API response into the field-shape we store on saved items.
+  var status = resp.status;
+  var update = {
+    agentStatus: status
+  };
+  if (status === "complete" && resp.result) {
+    update.agentResult = {
+      recommended_price: resp.result.recommended_price,
+      median_price:      resp.result.median_price,
+      confidence:        resp.result.confidence,
+      comp_count:        resp.result.comp_count,
+      reasoning:         (resp.result.reasoning || "").slice(0, 800)
+    };
+    update.agentError = null;
+  } else if (status === "failed") {
+    update.agentError = resp.error || "Agent failed";
+  } else if (status === "cancelled") {
+    update.agentError = "Cancelled";
+  } else {
+    // Still queued / running — nothing important changed.
+    return null;
+  }
+  return update;
+}
+
+function applyAgentUpdates(target, updates) {
+  for (var k in updates) target[k] = updates[k];
+}
+
+async function fetchAgentJob(jobId) {
+  var url = agentBaseUrl() + "/api/v1/research/" + encodeURIComponent(jobId);
+  var res = await fetch(url, {
+    method:  "GET",
+    headers: { "X-API-Key": agentApiKey() }
+  });
+  if (!res.ok) {
+    throw new Error("Agent poll " + res.status);
+  }
+  return await res.json();
+}
+
+function refreshIfShowingSavedView() {
+  // If the user is in the Groups detail view, re-render to surface fresh agent rows.
+  var groupDetail = $("view-group-detail");
+  if (groupDetail && !groupDetail.classList.contains("hidden") && currentGroupId != null) {
+    renderGroupDetail(currentGroupId);
+  }
+  // If the user is in the History list, re-render the list.
+  var historyView = $("view-history");
+  if (historyView && !historyView.classList.contains("hidden")) {
+    renderHistory();
+  }
+  // History detail also benefits from a refresh.
+  var histDetail = $("view-history-detail");
+  if (histDetail && !histDetail.classList.contains("hidden") && currentHistoryId != null) {
+    // Re-fetch + re-render the open entry.
+    openHistDetail(currentHistoryId);
+  }
 }
 
 async function callClaude(apiKey, model, photosList, hint) {
@@ -1595,53 +1986,94 @@ function updateEstimates() {
   updateMaxBuy();
   updateProfit();
 }
+
+/* Pure calc helpers \u2014 take inputs, return numbers. DOM-free so we can reuse
+ * them on saved items (Group + History) when the user taps an agent price. */
+function computeMaxBuy(value, str) {
+  if (value == null || !isFinite(value) || value <= 0) {
+    return { maxBuy: null, roi: roiForStr(str) };
+  }
+  var fees = feeOnSale(value);
+  var roi  = roiForStr(str);
+  var net  = value - fees;
+  var maxBuy = net / (1 + roi / 100);
+  if (!isFinite(maxBuy) || maxBuy <= 0) return { maxBuy: null, roi: roi };
+  return { maxBuy: maxBuy, roi: roi };
+}
+function computeProfit(value, cost, taxBpPct) {
+  if (value == null || !isFinite(value) || value <= 0) {
+    return { profit: null, fees: 0, taxBpDollars: 0, roiActual: null };
+  }
+  cost     = (cost     != null && isFinite(cost))     ? cost     : 0;
+  taxBpPct = (taxBpPct != null && isFinite(taxBpPct)) ? taxBpPct : 0;
+  var fees = feeOnSale(value);
+  var taxBpDollars = cost * (taxBpPct / 100);
+  var profit = value - fees - cost - taxBpDollars;
+  if (!isFinite(profit)) return { profit: null, fees: fees, taxBpDollars: taxBpDollars, roiActual: null };
+  var roiActual = cost > 0 ? (profit / cost) * 100 : null;
+  return { profit: profit, fees: fees, taxBpDollars: taxBpDollars, roiActual: roiActual };
+}
+function formatDollar(n) {
+  if (n == null || !isFinite(n)) return "\u2014";
+  var prefix = n < 0 ? "\u2212$" : "$";  // U+2212 minus sign
+  return prefix + Math.abs(n).toFixed(2);
+}
+
 function updateMaxBuy() {
   var mb = $("estMaxBuy");
   var note = $("estRoiNote");
-  if (fields.value == null || fields.value <= 0) {
+  var calc = computeMaxBuy(fields.value, fields.str);
+  if (calc.maxBuy == null) {
     mb.textContent = "\u2014";
     note.innerHTML = "&nbsp;";
     return;
   }
-  var net = fields.value - feeOnSale(fields.value);
-  var roi = roiForStr(fields.str);
-  var maxBuy = net / (1 + roi / 100);
-  if (!isFinite(maxBuy) || maxBuy <= 0) {
-    mb.textContent = "\u2014";
-    note.innerHTML = "&nbsp;";
-    return;
-  }
-  mb.textContent = "$" + maxBuy.toFixed(2);
-  note.textContent = "ROI " + roi + "%";
+  mb.textContent = "$" + calc.maxBuy.toFixed(2);
+  note.textContent = "ROI " + calc.roi + "%";
 }
 function updateProfit() {
   var span = $("estProfit");
   var note = $("estProfitNote");
   span.classList.remove("negative");
   note.classList.remove("negative");
-  if (fields.value == null || fields.value <= 0) {
+  var calc = computeProfit(fields.value, fields.cost, fields.taxBpPct);
+  if (calc.profit == null) {
     span.textContent = "\u2014";
     note.innerHTML = "&nbsp;";
     return;
   }
-  var cost     = fields.cost     != null ? fields.cost     : 0;
-  var taxBpPct = fields.taxBpPct != null ? fields.taxBpPct : 0;
-  var taxBpDollars = cost * (taxBpPct / 100);
-  var profit = fields.value - feeOnSale(fields.value) - cost - taxBpDollars;
-  if (!isFinite(profit)) {
-    span.textContent = "\u2014";
-    note.innerHTML = "&nbsp;";
-    return;
-  }
-  var prefix = profit < 0 ? "\u2212$" : "$";  // U+2212 minus sign
-  span.textContent = prefix + Math.abs(profit).toFixed(2);
-  if (profit < 0) { span.classList.add("negative"); note.classList.add("negative"); }
-  if (cost > 0) {
-    var roiActual = (profit / cost) * 100;
-    note.textContent = "ROI " + (isFinite(roiActual) ? roiActual.toFixed(0) : "\u2014") + "%";
+  span.textContent = formatDollar(calc.profit);
+  if (calc.profit < 0) { span.classList.add("negative"); note.classList.add("negative"); }
+  if (calc.roiActual != null) {
+    note.textContent = "ROI " + calc.roiActual.toFixed(0) + "%";
   } else {
     note.innerHTML = "&nbsp;";
   }
+}
+
+/* Recompute a saved item's derived fields when the user changes its sale price
+ * (e.g., by tapping an agent-suggested median or p75). Mutates `item` in place
+ * and returns it. Used for both group items and history entries.
+ *
+ * historyMode=true uses the history-entry field names (value, cost, taxBpPct,
+ * maxBuy, profit), false uses the group snapshot's field names (value, cost,
+ * taxBpPct, maxBuyText, maxBuyNum, profitText, profitNum).
+ */
+function recomputeSavedItem(item, newValue, historyMode) {
+  if (!item) return item;
+  item.value = (newValue == null || !isFinite(newValue)) ? null : newValue;
+  var mb = computeMaxBuy(item.value, item.str);
+  var pr = computeProfit(item.value, item.cost, item.taxBpPct);
+  if (historyMode) {
+    item.maxBuy = mb.maxBuy != null ? "$" + mb.maxBuy.toFixed(2) : "";
+    item.profit = pr.profit != null ? formatDollar(pr.profit) : "";
+  } else {
+    item.maxBuyText = mb.maxBuy != null ? "$" + mb.maxBuy.toFixed(2) : "";
+    item.maxBuyNum  = mb.maxBuy;
+    item.profitText = pr.profit != null ? formatDollar(pr.profit) : "";
+    item.profitNum  = pr.profit;
+  }
+  return item;
 }
 $("estValue").addEventListener("input", updateEstimates);
 $("estStr").addEventListener("input",   updateEstimates);
@@ -1700,6 +2132,8 @@ $("startOverBtn").addEventListener("click", function() {
   // If we were reviewing a finished queue job, dismiss it now — the user is
   // done with it.
   if (currentJobId != null) { dismissJob(currentJobId); currentJobId = null; }
+  pendingAgent = null;
+  resetSendToAgentButton();
   photos = [];
   fields = defaultFields();
   lastModelUsed = null;
@@ -1889,7 +2323,15 @@ async function buildGroupSnapshot() {
     taxBpPct:    fields.taxBpPct,
     taxBp:       taxBpDlr,
     profitText:  (profitText && profitText !== "\u2014") ? profitText : "",
-    profitNum:   parseDollarText(profitText)
+    profitNum:   parseDollarText(profitText),
+    // Agent fields: jobId is the only one set at save time; status/result come
+    // in later when the background poller hears back from the API.
+    agentJobId:        pendingAgent ? pendingAgent.jobId : null,
+    agentSubmittedAt:  pendingAgent ? pendingAgent.submittedAt : null,
+    agentStatus:       pendingAgent ? "queued" : null,
+    agentResult:       null,
+    agentError:        null,
+    agentSelectedPrice: null
   };
 }
 async function saveToGroup(groupId) {
@@ -2003,7 +2445,13 @@ $("saveHistoryBtn").addEventListener("click", async function() {
       notes:      $("resultNotes").value.trim(),
       hint:       ($("hintText").value.trim() || lastHintUsed || ""),
       photoCount: photos.length,
-      thumb:      thumb
+      thumb:      thumb,
+      agentJobId:        pendingAgent ? pendingAgent.jobId : null,
+      agentSubmittedAt:  pendingAgent ? pendingAgent.submittedAt : null,
+      agentStatus:       pendingAgent ? "queued" : null,
+      agentResult:       null,
+      agentError:        null,
+      agentSelectedPrice: null
     };
     await dbAdd(entry);
     $("resultNotes").value = "";
@@ -2149,11 +2597,14 @@ async function renderGroupDetail(groupId) {
       parts.push('<span class="' + cls + '">Profit ' + escapeHtml(it.profitText) + '</span>');
     }
 
+    var agentHtml = renderAgentRowHtml(it);
+
     row.innerHTML =
       thumbHtml +
       '<div class="group-item-meta">' +
         '<div class="group-item-query">' + escapeHtml(it.query || "(no query)") + '</div>' +
         '<div class="group-item-nums">' + parts.join(" &middot; ") + '</div>' +
+        agentHtml +
       '</div>' +
       '<button class="group-item-x" type="button" title="Remove">&times;</button>';
 
@@ -2162,7 +2613,109 @@ async function renderGroupDetail(groupId) {
       await groupsRemoveItem(groupId, it.savedAt);
       renderGroupDetail(groupId);
     });
+    // Wire tap-to-apply on any agent price chips inside this row.
+    wireAgentChipsForGroupItem(row, groupId, it.savedAt);
     list.appendChild(row);
+  });
+}
+
+/* Build an HTML snippet showing the agent's status/results for a saved item.
+ * The two prices (median, p75) render as chips with data-* attrs so the
+ * caller can attach tap handlers via wireAgentChips*().
+ */
+function renderAgentRowHtml(item) {
+  if (!item || !item.agentJobId) return "";
+  var status = item.agentStatus || "queued";
+  if (status === "queued" || status === "running") {
+    return '<div class="agent-row running">' +
+      '<span class="agent-row-label">Agent</span>' +
+      '<span><span class="agent-mini-spin"></span>researching…</span>' +
+      '</div>';
+  }
+  if (status === "failed" || status === "cancelled") {
+    return '<div class="agent-row error">' +
+      '<span class="agent-row-label">Agent</span>' +
+      '<span>' + escapeHtml(item.agentError || "failed") + '</span>' +
+      '</div>';
+  }
+  if (status === "complete") {
+    var r = item.agentResult || {};
+    var hasRec    = r.recommended_price != null && isFinite(r.recommended_price);
+    var hasMedian = r.median_price      != null && isFinite(r.median_price);
+    if (!hasRec && !hasMedian) {
+      // Insufficient data — agent ran but couldn't recommend.
+      var conf = r.confidence || "insufficient_data";
+      return '<div class="agent-row none">' +
+        '<span class="agent-row-label">Agent</span>' +
+        '<span>No matches found' + (conf === "insufficient_data" ? "" : " (" + escapeHtml(conf) + ")") + '</span>' +
+        '</div>';
+    }
+    var chips = [];
+    if (hasMedian) {
+      var medSel = (item.agentSelectedPrice != null && Math.abs(item.agentSelectedPrice - r.median_price) < 0.01) ? " selected" : "";
+      chips.push(
+        '<button type="button" class="agent-price-chip median' + medSel + '" ' +
+        'data-agent-action="set" data-agent-price="' + r.median_price + '">' +
+        '$' + Number(r.median_price).toFixed(2) + ' median</button>'
+      );
+    }
+    if (hasRec) {
+      var p75Sel = (item.agentSelectedPrice != null && Math.abs(item.agentSelectedPrice - r.recommended_price) < 0.01) ? " selected" : "";
+      chips.push(
+        '<button type="button" class="agent-price-chip' + p75Sel + '" ' +
+        'data-agent-action="set" data-agent-price="' + r.recommended_price + '">' +
+        '$' + Number(r.recommended_price).toFixed(2) + ' p75</button>'
+      );
+    }
+    var meta = "";
+    if (r.comp_count != null) {
+      meta = '<span class="agent-meta">' + r.comp_count + ' comp' + (r.comp_count === 1 ? "" : "s") +
+             (r.confidence ? " &middot; " + escapeHtml(r.confidence) : "") + '</span>';
+    }
+    return '<div class="agent-row done">' +
+      '<span class="agent-row-label">Agent</span>' +
+      chips.join("") +
+      meta +
+      '</div>';
+  }
+  return "";
+}
+
+function wireAgentChipsForGroupItem(rowEl, groupId, savedAt) {
+  var chips = rowEl.querySelectorAll('.agent-price-chip[data-agent-action="set"]');
+  chips.forEach(function(chip) {
+    chip.addEventListener("click", async function(e) {
+      e.stopPropagation();
+      var price = parseFloat(chip.getAttribute("data-agent-price"));
+      if (!isFinite(price)) return;
+      var g = await groupsGet(groupId);
+      if (!g || !Array.isArray(g.items)) return;
+      var item = g.items.find(function(x) { return x.savedAt === savedAt; });
+      if (!item) return;
+      recomputeSavedItem(item, price, false);
+      item.agentSelectedPrice = price;
+      await groupsPut(g);
+      renderGroupDetail(groupId);
+    });
+  });
+}
+
+function wireAgentChipsForHistoryEntry(rowEl, entryId) {
+  var chips = rowEl.querySelectorAll('.agent-price-chip[data-agent-action="set"]');
+  chips.forEach(function(chip) {
+    chip.addEventListener("click", async function(e) {
+      e.stopPropagation();
+      var price = parseFloat(chip.getAttribute("data-agent-price"));
+      if (!isFinite(price)) return;
+      var entry = await dbGet(entryId);
+      if (!entry) return;
+      recomputeSavedItem(entry, price, true);
+      entry.agentSelectedPrice = price;
+      await dbPut(entry);
+      // Re-render whichever view the user is in.
+      if (currentHistoryId === entryId) openHistDetail(entryId);
+      else renderHistory();
+    });
   });
 }
 
@@ -2332,6 +2885,16 @@ function buildHistEntry(entry) {
   t.textContent = timeStr + (entry.photoCount > 1 ? "  \u00b7  " + entry.photoCount + " photos" : "");
   meta.appendChild(t);
 
+  // Optional agent line, with tap-to-apply for chips when complete.
+  var agentHtml = renderAgentRowHtml(entry);
+  if (agentHtml) {
+    var ag = document.createElement("div");
+    ag.innerHTML = agentHtml;
+    meta.appendChild(ag);
+    // Stop the row click from opening detail when the user taps a chip.
+    wireAgentChipsForHistoryEntry(meta, entry.id);
+  }
+
   el.appendChild(meta);
   el.addEventListener("click", function() { openHistDetail(entry.id); });
   return el;
@@ -2387,6 +2950,16 @@ async function openHistDetail(id) {
     vEl.className = "v"; vEl.textContent = v;
     row.appendChild(kEl); row.appendChild(vEl);
     meta.appendChild(row);
+  }
+
+  // Agent panel inside the detail meta, with tap-to-apply.
+  var agentHtml = renderAgentRowHtml(entry);
+  if (agentHtml) {
+    var ag = document.createElement("div");
+    ag.style.marginTop = "10px";
+    ag.innerHTML = agentHtml;
+    meta.appendChild(ag);
+    wireAgentChipsForHistoryEntry(meta, entry.id);
   }
 
   $("histDetailQuery").value = entry.query || "";
@@ -2483,6 +3056,11 @@ $("importFile").addEventListener("change", async function(e) {
 loadHintState();
 showView("main");
 updateSaveToGroupLabel();
+updateAgentButtonVisibility();
+$("sendToAgentBtn").addEventListener("click", sendToAgent);
+
+// Kick off the background agent-job poller. Idle if no jobs in flight.
+startAgentPolling();
 </script>
 
 </body>
