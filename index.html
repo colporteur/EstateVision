@@ -458,6 +458,93 @@
     border-radius: 50%; animation: spin 0.8s linear infinite;
     margin-right: 4px; vertical-align: middle;
   }
+  .agent-view-comps {
+    width: auto; display: inline-block;
+    background: none; border: none;
+    color: #aac8ff; padding: 0; margin: 0 0 0 4px;
+    font-size: 0.85em; cursor: pointer;
+    text-decoration: underline;
+    font-family: inherit;
+  }
+  .agent-view-comps:active { color: #fff; }
+
+  /* Comps modal */
+  .comps-modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1000;
+    padding: 12px;
+  }
+  .comps-modal {
+    background: #1a1a1a; border: 1px solid #333;
+    border-radius: 10px;
+    max-width: 720px; width: 100%;
+    max-height: 90vh; display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .comps-modal-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 14px;
+    border-bottom: 1px solid #2a2a2a;
+    flex-shrink: 0;
+  }
+  .comps-modal-title { font-size: 1em; font-weight: 600; color: #e8e8e8; }
+  .comps-modal-close {
+    width: auto; padding: 6px 12px; margin: 0;
+    background: #2a2a2a; border: 1px solid #444;
+    color: #aaa; font-size: 1.2em; line-height: 1;
+    border-radius: 6px;
+  }
+  .comps-modal-close:active { background: #3a1f1f; color: #ff8888; }
+  .comps-modal-body {
+    padding: 10px 14px; overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .comp-card {
+    display: flex; gap: 10px;
+    padding: 10px;
+    background: #222; border: 1px solid #333;
+    border-radius: 8px; margin-bottom: 8px;
+  }
+  .comp-thumb {
+    width: 72px; height: 72px;
+    object-fit: cover;
+    border-radius: 6px; background: #0f0f0f;
+    flex-shrink: 0;
+  }
+  .comp-meta { flex: 1; min-width: 0; }
+  .comp-title {
+    display: block;
+    font-size: 0.9em; color: #e8e8e8; word-break: break-word;
+    text-decoration: none;
+  }
+  .comp-title:hover  { color: #aac8ff; text-decoration: underline; }
+  .comp-title:active { color: #cfe8cf; }
+  .comp-price-row {
+    font-size: 0.85em; color: #ccc; margin-top: 4px;
+  }
+  .comp-total { font-weight: 600; color: #9fd89f; }
+  .comp-shipping { color: #888; font-size: 0.9em; }
+  .comp-detail-row {
+    display: flex; gap: 6px; flex-wrap: wrap;
+    margin-top: 4px;
+    font-size: 0.72em; color: #888;
+  }
+  .comp-badge {
+    display: inline-block; padding: 2px 6px;
+    background: #2a2a2a; border: 1px solid #333;
+    border-radius: 3px;
+    text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .comp-badge.score-high { background: #1f3a1f; border-color: #305030; color: #9fd89f; }
+  .comp-badge.score-mid  { background: #3a3a1f; border-color: #505030; color: #d8d89f; }
+  .comp-badge.score-low  { background: #3a1f1f; border-color: #503030; color: #d89f9f; }
+  .comp-reasoning {
+    font-size: 0.78em; color: #999;
+    margin-top: 4px; line-height: 1.3;
+    font-style: italic;
+  }
 
   /* Settings: ROI matrix */
   .settings-subhead {
@@ -1748,7 +1835,11 @@ function buildAgentUpdates(resp) {
       median_price:      resp.result.median_price,
       confidence:        resp.result.confidence,
       comp_count:        resp.result.comp_count,
-      reasoning:         (resp.result.reasoning || "").slice(0, 800)
+      reasoning:         (resp.result.reasoning || "").slice(0, 800),
+      // Persist the confident comps so the user can click through to see
+      // them later. Trim the heavy 'raw' field per comp; everything else is
+      // small enough to be worth keeping (image_url is just a URL string).
+      comps: Array.isArray(resp.result.comps) ? resp.result.comps.map(trimCompForStorage) : []
     };
     update.agentError = null;
   } else if (status === "failed") {
@@ -1764,6 +1855,22 @@ function buildAgentUpdates(resp) {
 
 function applyAgentUpdates(target, updates) {
   for (var k in updates) target[k] = updates[k];
+}
+
+function trimCompForStorage(c) {
+  if (!c) return null;
+  return {
+    title:           c.title || "",
+    price:           c.price,
+    shipping_cost:   c.shipping_cost,
+    url:             c.url || "",
+    image_url:       c.image_url || null,
+    condition:       c.condition || null,
+    sold_date:       c.sold_date || null,
+    source:          c.source || null,
+    match_score:     c.match_score,
+    match_reasoning: (c.match_reasoning || "").slice(0, 300)
+  };
 }
 
 async function fetchAgentJob(jobId) {
@@ -2670,7 +2777,12 @@ function renderAgentRowHtml(item) {
     var meta = "";
     if (r.comp_count != null) {
       meta = '<span class="agent-meta">' + r.comp_count + ' comp' + (r.comp_count === 1 ? "" : "s") +
-             (r.confidence ? " &middot; " + escapeHtml(r.confidence) : "") + '</span>';
+             (r.confidence ? " &middot; " + escapeHtml(r.confidence) : "");
+      if (Array.isArray(r.comps) && r.comps.length > 0) {
+        meta += ' <button type="button" class="agent-view-comps" data-agent-action="view-comps">view ' +
+                r.comps.length + '</button>';
+      }
+      meta += '</span>';
     }
     return '<div class="agent-row done">' +
       '<span class="agent-row-label">Agent</span>' +
@@ -2679,6 +2791,86 @@ function renderAgentRowHtml(item) {
       '</div>';
   }
   return "";
+}
+
+/* Comps modal — opens when the user taps "view N" on the Agent row. Item
+ * here is whichever record carries the agentResult: a group item snapshot or
+ * a history entry. Read-only display, no edits. */
+function openCompsModal(item) {
+  var r = item && item.agentResult;
+  if (!r || !Array.isArray(r.comps) || r.comps.length === 0) return;
+  var titleEl = $("compsModalTitle");
+  var bodyEl  = $("compsModalBody");
+  titleEl.textContent = r.comps.length + " comparable listing" + (r.comps.length === 1 ? "" : "s");
+  bodyEl.innerHTML = "";
+  r.comps.forEach(function(c) { bodyEl.appendChild(buildCompCard(c)); });
+  show($("compsModalOverlay"));
+}
+
+function closeCompsModal() {
+  hide($("compsModalOverlay"));
+}
+
+function buildCompCard(c) {
+  if (!c) return document.createDocumentFragment();
+  var card = document.createElement("div");
+  card.className = "comp-card";
+
+  var img = document.createElement("img");
+  img.className = "comp-thumb";
+  img.alt = "";
+  if (c.image_url) img.src = c.image_url;
+  card.appendChild(img);
+
+  var meta = document.createElement("div");
+  meta.className = "comp-meta";
+
+  var title = document.createElement("a");
+  title.className = "comp-title";
+  title.href = c.url || "#";
+  title.target = "_blank";
+  title.rel = "noopener noreferrer";
+  title.textContent = c.title || "(no title)";
+  meta.appendChild(title);
+
+  var priceRow = document.createElement("div");
+  priceRow.className = "comp-price-row";
+  var itemP = (c.price != null && isFinite(c.price)) ? Number(c.price) : null;
+  var shipP = (c.shipping_cost != null && isFinite(c.shipping_cost)) ? Number(c.shipping_cost) : 0;
+  var total = itemP != null ? itemP + shipP : null;
+  if (total != null) {
+    var totalHtml = '<span class="comp-total">$' + total.toFixed(2) + ' total</span>';
+    var shipHtml  = '<span class="comp-shipping"> &middot; $' + itemP.toFixed(2) + ' item + $' + shipP.toFixed(2) + ' ship</span>';
+    priceRow.innerHTML = totalHtml + shipHtml;
+  } else {
+    priceRow.textContent = "Price unknown";
+  }
+  meta.appendChild(priceRow);
+
+  var details = document.createElement("div");
+  details.className = "comp-detail-row";
+  var badges = [];
+  if (c.match_score != null && isFinite(c.match_score)) {
+    var scoreCls = c.match_score >= 8 ? "score-high"
+                 : c.match_score >= 6 ? "score-mid"
+                 : "score-low";
+    badges.push('<span class="comp-badge ' + scoreCls + '">match ' + c.match_score + '/10</span>');
+  }
+  if (c.condition)  badges.push('<span class="comp-badge">' + escapeHtml(c.condition) + '</span>');
+  if (c.sold_date)  badges.push('<span class="comp-badge">sold ' + escapeHtml(c.sold_date) + '</span>');
+  if (c.source)     badges.push('<span class="comp-badge">' + escapeHtml(c.source) + '</span>');
+  details.innerHTML = badges.join("");
+  meta.appendChild(details);
+
+  if (c.match_reasoning) {
+    var why = document.createElement("div");
+    why.className = "comp-reasoning";
+    why.textContent = "“" + c.match_reasoning + "”";
+    meta.appendChild(why);
+  }
+
+  card.appendChild(meta);
+  return card;
 }
 
 function wireAgentChipsForGroupItem(rowEl, groupId, savedAt) {
@@ -2698,6 +2890,17 @@ function wireAgentChipsForGroupItem(rowEl, groupId, savedAt) {
       renderGroupDetail(groupId);
     });
   });
+  // "View N comps" link
+  var viewBtns = rowEl.querySelectorAll('[data-agent-action="view-comps"]');
+  viewBtns.forEach(function(btn) {
+    btn.addEventListener("click", async function(e) {
+      e.stopPropagation();
+      var g = await groupsGet(groupId);
+      if (!g || !Array.isArray(g.items)) return;
+      var item = g.items.find(function(x) { return x.savedAt === savedAt; });
+      if (item) openCompsModal(item);
+    });
+  });
 }
 
 function wireAgentChipsForHistoryEntry(rowEl, entryId) {
@@ -2715,6 +2918,15 @@ function wireAgentChipsForHistoryEntry(rowEl, entryId) {
       // Re-render whichever view the user is in.
       if (currentHistoryId === entryId) openHistDetail(entryId);
       else renderHistory();
+    });
+  });
+  // "View N comps" link
+  var viewBtns = rowEl.querySelectorAll('[data-agent-action="view-comps"]');
+  viewBtns.forEach(function(btn) {
+    btn.addEventListener("click", async function(e) {
+      e.stopPropagation();
+      var entry = await dbGet(entryId);
+      if (entry) openCompsModal(entry);
     });
   });
 }
@@ -3053,6 +3265,11 @@ $("importFile").addEventListener("change", async function(e) {
   $("importFile").value = "";
 });
 
+$("compsModalOverlay").addEventListener("click", function(e) {
+  if (e.target === $("compsModalOverlay")) closeCompsModal();
+});
+$("compsModalCloseBtn").addEventListener("click", closeCompsModal);
+
 loadHintState();
 showView("main");
 updateSaveToGroupLabel();
@@ -3062,6 +3279,17 @@ $("sendToAgentBtn").addEventListener("click", sendToAgent);
 // Kick off the background agent-job poller. Idle if no jobs in flight.
 startAgentPolling();
 </script>
+
+<!-- Comps modal — appears over everything when the user taps "View N comps" -->
+<div id="compsModalOverlay" class="comps-modal-overlay hidden">
+  <div class="comps-modal">
+    <div class="comps-modal-head">
+      <div class="comps-modal-title" id="compsModalTitle">Comparable listings</div>
+      <button class="comps-modal-close" id="compsModalCloseBtn" type="button" aria-label="Close">&times;</button>
+    </div>
+    <div class="comps-modal-body" id="compsModalBody"></div>
+  </div>
+</div>
 
 </body>
 </html>
