@@ -672,6 +672,84 @@
     font-size: 0.75em; font-weight: 500; line-height: 1.1;
   }
   .item-bump-btn:active { background: #2a2a2a; }
+  .item-bump-btn:disabled {
+    opacity: 0.35; cursor: not-allowed;
+  }
+  .item-bump-btn.line-jump {
+    background: #1a2238; color: #aac8ff;
+    border-color: #2a4570;
+  }
+  .item-bump-btn.line-jump:active { background: #2a3a5a; }
+
+  /* Tappable thumbnails — visual cue that you can enlarge */
+  .group-item-thumb, .hist-thumb {
+    cursor: zoom-in;
+  }
+  .hist-detail-img { cursor: zoom-in; }
+
+  /* Full-screen photo lightbox */
+  .photo-lightbox {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.92);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 2000;
+    padding: 16px;
+  }
+  .photo-lightbox img {
+    max-width: 100%; max-height: 100%;
+    object-fit: contain;
+    border-radius: 4px;
+  }
+  .photo-lightbox-close {
+    position: absolute; top: 12px; right: 12px;
+    width: 40px; height: 40px; padding: 0; margin: 0;
+    background: rgba(0,0,0,0.6); border: 1px solid #444;
+    color: #fff; font-size: 1.6em; line-height: 1;
+    border-radius: 20px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .photo-lightbox-close:active { background: rgba(60,0,0,0.8); }
+
+  /* Item edit modal */
+  .item-edit-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1500;
+    padding: 12px;
+  }
+  .item-edit-modal {
+    background: #1a1a1a; border: 1px solid #333;
+    border-radius: 10px;
+    max-width: 520px; width: 100%;
+    max-height: 90vh; display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .item-edit-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 14px;
+    border-bottom: 1px solid #2a2a2a;
+    flex-shrink: 0;
+  }
+  .item-edit-title { font-size: 1em; font-weight: 600; color: #e8e8e8; }
+  .item-edit-close {
+    width: auto; padding: 6px 12px; margin: 0;
+    background: #2a2a2a; border: 1px solid #444;
+    color: #aaa; font-size: 1.2em; line-height: 1;
+    border-radius: 6px;
+  }
+  .item-edit-close:active { background: #3a1f1f; color: #ff8888; }
+  .item-edit-body {
+    padding: 12px 14px; overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .item-edit-foot {
+    display: flex; gap: 8px;
+    padding: 10px 14px;
+    border-top: 1px solid #2a2a2a;
+    flex-shrink: 0;
+  }
+  .item-edit-foot button { flex: 1; margin: 0; }
 
   /* Settings: ROI matrix */
   .settings-subhead {
@@ -998,6 +1076,37 @@
   <div class="row" style="margin-top:12px;">
     <button class="primary" id="saveProfileBtn">Save</button>
     <button class="danger" id="deleteProfileBtn">Delete profile</button>
+  </div>
+</div>
+
+<!-- Photo lightbox — tap any saved-item thumbnail to view it full-size. -->
+<div id="photoLightbox" class="photo-lightbox hidden">
+  <img id="photoLightboxImg" alt="">
+  <button class="photo-lightbox-close" id="photoLightboxCloseBtn" type="button" aria-label="Close">&times;</button>
+</div>
+
+<!-- Item edit modal — tap an item row to edit its query / sale / STR / cost / Tax+BP. -->
+<div id="itemEditOverlay" class="item-edit-overlay hidden">
+  <div class="item-edit-modal">
+    <div class="item-edit-head">
+      <div class="item-edit-title">Edit item</div>
+      <button class="item-edit-close" id="itemEditCloseBtn" type="button" aria-label="Close">&times;</button>
+    </div>
+    <div class="item-edit-body">
+      <label for="itemEditQuery">Search query</label>
+      <textarea id="itemEditQuery" rows="2" spellcheck="false" autocapitalize="none" autocorrect="off"></textarea>
+      <div class="two-col">
+        <div><label>Sale Price</label><input type="number" step="0.01" min="0" inputmode="decimal" id="itemEditSale"></div>
+        <div><label>Sell-Through %</label><input type="number" step="1" min="0" max="100" inputmode="numeric" id="itemEditStr"></div>
+        <div><label>Cost</label><input type="number" step="0.01" min="0" inputmode="decimal" id="itemEditCost"></div>
+        <div><label>Tax + BP %</label><input type="number" step="0.1" min="0" inputmode="decimal" id="itemEditTaxBp"></div>
+      </div>
+      <div class="footnote" style="margin-top:6px;">Max Buy and Profit will recompute from these values when you Save.</div>
+    </div>
+    <div class="item-edit-foot">
+      <button class="primary" id="itemEditSaveBtn">Save</button>
+      <button id="itemEditCancelBtn">Cancel</button>
+    </div>
   </div>
 </div>
 
@@ -3309,6 +3418,77 @@ function renderBidLineRow(line, lineIdx, groupId) {
   return row;
 }
 
+/* Find the next bid line above/below the item's current sort-key value.
+ * Returns the line value, or null if no line exists in that direction. */
+function nextLineAboveItem(item, bidLines) {
+  var k = sortKeyOf(item);
+  if (!Array.isArray(bidLines) || bidLines.length === 0) return null;
+  // "Above" the item = line.value > k (so item is below line). We want the
+  // smallest such line.
+  var candidates = bidLines.filter(function(l) { return l.value > (k == null ? -Infinity : k); });
+  if (candidates.length === 0) return null;
+  return Math.min.apply(null, candidates.map(function(l) { return l.value; }));
+}
+function nextLineBelowItem(item, bidLines) {
+  var k = sortKeyOf(item);
+  if (!Array.isArray(bidLines) || bidLines.length === 0) return null;
+  // "Below" the item = line.value < k (so item is above line). We want the
+  // largest such line.
+  var candidates = bidLines.filter(function(l) { return l.value < (k == null ? Infinity : k); });
+  if (candidates.length === 0) return null;
+  return Math.max.apply(null, candidates.map(function(l) { return l.value; }));
+}
+
+/* Set the item's sort-key value to a specific target. Behaves like
+ * bumpItemForSort but with SET semantics on the same target field. */
+function setItemSortKeyValue(item, targetValue) {
+  if (!isFinite(targetValue)) return;
+  if (targetValue < 0) targetValue = 0;
+  var mb = (item.maxBuyNum != null && isFinite(item.maxBuyNum)) ? item.maxBuyNum : null;
+  var co = (item.cost      != null && isFinite(item.cost))      ? item.cost      : null;
+  var targetField;
+  if (groupSortMode === "cost") {
+    targetField = "cost";
+  } else if (groupSortMode === "maxBuy") {
+    targetField = "value";
+  } else if (groupSortMode === "lowest") {
+    if (mb == null && co == null) targetField = "value";
+    else if (mb == null)          targetField = "cost";
+    else if (co == null)          targetField = "value";
+    else                          targetField = (mb < co) ? "value" : "cost";
+  } else if (groupSortMode === "highest") {
+    if (mb == null && co == null) targetField = "value";
+    else if (mb == null)          targetField = "cost";
+    else if (co == null)          targetField = "value";
+    else                          targetField = (mb > co) ? "value" : "cost";
+  } else {
+    targetField = "value";
+  }
+  if (targetField === "cost") {
+    // Want item.cost so that it becomes the sort-key target. For cost-sort
+    // and the cost branches of lowest/highest, the cost IS the sort key.
+    item.cost = targetValue;
+    item.taxBp = (item.cost != null && item.taxBpPct != null) ? item.cost * (item.taxBpPct / 100) : null;
+    recomputeSavedItem(item, item.value, false);
+  } else {
+    // We're targeting Max Buy = targetValue. Invert the formula to find Sale.
+    //   maxBuy = (sale - feeOnSale(sale)) / (1 + roi/100)
+    //   sale = (maxBuy * (1 + roi/100) + per_order) / (1 - (fvf+promo)/100)
+    var m = getRoiMatrix();
+    var fvf   = Number(m.fees.fvf)       || 0;
+    var promo = Number(m.fees.promoted)  || 0;
+    var per   = Number(m.fees.per_order) || 0;
+    var f = (fvf + promo) / 100;
+    var roi = roiForStr(item.str);
+    if (f >= 1) { return; }  // degenerate config; bail
+    var newSale = (targetValue * (1 + roi / 100) + per) / (1 - f);
+    if (!isFinite(newSale) || newSale < 0) newSale = 0;
+    // Snap to two decimals so we don't show weird precision.
+    newSale = Math.round(newSale * 100) / 100;
+    recomputeSavedItem(item, newSale, false);
+  }
+}
+
 /* Item bump: adjusts whichever underlying value maps to the active sort key.
  * Returns the field path that was bumped, for the persist write. */
 function bumpItemForSort(item, direction) {
@@ -3412,7 +3592,7 @@ async function renderGroupDetail(groupId) {
       list.appendChild(renderBidLineRow(lines[li].line, lines[li].origIdx, groupId));
       li++;
     }
-    list.appendChild(renderItemRow(it, groupId));
+    list.appendChild(renderItemRow(it, groupId, g.bidLines || []));
   });
   // Any remaining lines (below the lowest item) go at the bottom.
   while (li < lines.length) {
@@ -3421,7 +3601,7 @@ async function renderGroupDetail(groupId) {
   }
 }
 
-function renderItemRow(it, groupId) {
+function renderItemRow(it, groupId, groupBidLines) {
   var row = document.createElement("div");
   row.className = "group-item";
 
@@ -3442,6 +3622,11 @@ function renderItemRow(it, groupId) {
 
   var agentHtml = renderAgentRowHtml(it);
 
+  var lineUp   = nextLineAboveItem(it, groupBidLines);
+  var lineDown = nextLineBelowItem(it, groupBidLines);
+  var jumpUpDisabled   = (lineUp   == null) ? " disabled" : "";
+  var jumpDownDisabled = (lineDown == null) ? " disabled" : "";
+
   row.innerHTML =
     thumbHtml +
     '<div class="group-item-meta">' +
@@ -3450,6 +3635,8 @@ function renderItemRow(it, groupId) {
       '<div class="item-bump-row">' +
         '<button type="button" class="item-bump-btn" data-bump="up">+$1</button>' +
         '<button type="button" class="item-bump-btn" data-bump="down">−$1</button>' +
+        '<button type="button" class="item-bump-btn line-jump" data-jump="up" title="Jump to next bid line above"' + jumpUpDisabled + '>&uarr;&uarr;</button>' +
+        '<button type="button" class="item-bump-btn line-jump" data-jump="down" title="Jump to next bid line below"' + jumpDownDisabled + '>&darr;&darr;</button>' +
       '</div>' +
       agentHtml +
     '</div>' +
@@ -3460,16 +3647,51 @@ function renderItemRow(it, groupId) {
     await groupsRemoveItem(groupId, it.savedAt);
     renderGroupDetail(groupId);
   });
-  // Bump buttons.
+  // Tap the thumbnail to enlarge.
+  var thumb = row.querySelector(".group-item-thumb");
+  if (thumb && thumb.tagName === "IMG") {
+    thumb.addEventListener("click", function(e) {
+      e.stopPropagation();
+      openPhotoLightbox(it.thumb);
+    });
+  }
+  // Tap anywhere on the meta area to open the edit modal.
+  var meta = row.querySelector(".group-item-meta");
+  meta.addEventListener("click", function(e) {
+    // Bumps, agent chips, and view-comps are all inside meta — let those run.
+    if (e.target.closest(".item-bump-btn") ||
+        e.target.closest(".agent-price-chip") ||
+        e.target.closest("[data-agent-action]") ||
+        e.target.closest("a")) return;
+    openItemEditModal(groupId, it.savedAt);
+  });
+  // Bump buttons: +/-$1 and jump-to-bid-line.
   row.querySelectorAll(".item-bump-btn").forEach(function(btn) {
+    if (btn.disabled) return;
     btn.addEventListener("click", async function(e) {
       e.stopPropagation();
-      var dir = btn.getAttribute("data-bump") === "up" ? 1 : -1;
       var g = await groupsGet(groupId);
       if (!g || !Array.isArray(g.items)) return;
       var stored = g.items.find(function(x) { return x.savedAt === it.savedAt; });
       if (!stored) return;
-      bumpItemForSort(stored, dir);
+      var jumpDir = btn.getAttribute("data-jump");
+      if (jumpDir) {
+        var lines = g.bidLines || [];
+        if (jumpDir === "up") {
+          var v = nextLineAboveItem(stored, lines);
+          if (v == null) return;
+          // Place just above the line (line.value + 1) so item moves into the band above.
+          setItemSortKeyValue(stored, v + 1);
+        } else {
+          var v2 = nextLineBelowItem(stored, lines);
+          if (v2 == null) return;
+          // Place just below the line (line.value - 1, clamped to 0).
+          setItemSortKeyValue(stored, Math.max(0, v2 - 1));
+        }
+      } else {
+        var dir = btn.getAttribute("data-bump") === "up" ? 1 : -1;
+        bumpItemForSort(stored, dir);
+      }
       await groupsPut(g);
       renderGroupDetail(groupId);
     });
@@ -3562,6 +3784,76 @@ function openCompsModal(item) {
 
 function closeCompsModal() {
   hide($("compsModalOverlay"));
+}
+
+/* ============================================================
+ * Photo lightbox: tap a thumbnail to view it full-size
+ * ============================================================ */
+
+function openPhotoLightbox(src) {
+  if (!src) return;
+  $("photoLightboxImg").src = src;
+  show($("photoLightbox"));
+}
+function closePhotoLightbox() {
+  hide($("photoLightbox"));
+  $("photoLightboxImg").src = "";  // free memory
+}
+
+/* ============================================================
+ * Item edit modal: tap an item row to edit query/sale/STR/cost/Tax+BP
+ * ============================================================ */
+
+var itemEditContext = null;  // { groupId, savedAt }
+
+async function openItemEditModal(groupId, savedAt) {
+  var g = await groupsGet(groupId);
+  if (!g || !Array.isArray(g.items)) return;
+  var item = g.items.find(function(x) { return x.savedAt === savedAt; });
+  if (!item) return;
+  itemEditContext = { groupId: groupId, savedAt: savedAt };
+  $("itemEditQuery").value  = item.query || "";
+  $("itemEditSale").value   = item.value     != null ? item.value     : "";
+  $("itemEditStr").value    = item.str       != null ? item.str       : "";
+  $("itemEditCost").value   = item.cost      != null ? item.cost      : "";
+  $("itemEditTaxBp").value  = item.taxBpPct  != null ? item.taxBpPct  : "";
+  show($("itemEditOverlay"));
+  // Tiny delay so iOS Safari focuses correctly inside the modal.
+  setTimeout(function() {
+    var saleEl = $("itemEditSale");
+    if (saleEl && saleEl.focus) saleEl.focus();
+  }, 40);
+}
+
+function closeItemEditModal() {
+  hide($("itemEditOverlay"));
+  itemEditContext = null;
+}
+
+async function saveItemEdit() {
+  if (!itemEditContext) return;
+  var ctx = itemEditContext;
+  var g = await groupsGet(ctx.groupId);
+  if (!g || !Array.isArray(g.items)) { closeItemEditModal(); return; }
+  var item = g.items.find(function(x) { return x.savedAt === ctx.savedAt; });
+  if (!item) { closeItemEditModal(); return; }
+
+  function parseOrNull(s) {
+    if (s === "" || s == null) return null;
+    var n = Number(s);
+    return isFinite(n) ? n : null;
+  }
+  item.query    = ($("itemEditQuery").value || "").trim();
+  var newSale   = parseOrNull($("itemEditSale").value);
+  item.str      = parseOrNull($("itemEditStr").value);
+  item.cost     = parseOrNull($("itemEditCost").value);
+  item.taxBpPct = parseOrNull($("itemEditTaxBp").value);
+  item.taxBp    = (item.cost != null && item.taxBpPct != null) ? item.cost * (item.taxBpPct / 100) : null;
+  // recomputeSavedItem sets item.value, item.maxBuyText/Num, item.profitText/Num.
+  recomputeSavedItem(item, newSale, false);
+  await groupsPut(g);
+  closeItemEditModal();
+  renderGroupDetail(ctx.groupId);
 }
 
 function buildCompCard(c) {
@@ -3864,6 +4156,12 @@ function buildHistEntry(entry) {
   thumb.className = "hist-thumb";
   if (entry.thumb) thumb.src = entry.thumb;
   thumb.alt = "";
+  if (entry.thumb) {
+    thumb.addEventListener("click", function(e) {
+      e.stopPropagation();
+      openPhotoLightbox(entry.thumb);
+    });
+  }
   el.appendChild(thumb);
 
   var meta = document.createElement("div");
@@ -3918,8 +4216,10 @@ async function openHistDetail(id) {
   if (entry.thumb) {
     $("histDetailImg").src = entry.thumb;
     show($("histDetailImg"));
+    $("histDetailImg").onclick = function() { openPhotoLightbox(entry.thumb); };
   } else {
     hide($("histDetailImg"));
+    $("histDetailImg").onclick = null;
   }
 
   var meta = $("histDetailMeta");
@@ -4067,6 +4367,22 @@ $("compsModalOverlay").addEventListener("click", function(e) {
   if (e.target === $("compsModalOverlay")) closeCompsModal();
 });
 $("compsModalCloseBtn").addEventListener("click", closeCompsModal);
+
+$("photoLightbox").addEventListener("click", function(e) {
+  // Tap anywhere on the lightbox (including the image) to dismiss.
+  closePhotoLightbox();
+});
+$("photoLightboxCloseBtn").addEventListener("click", function(e) {
+  e.stopPropagation();
+  closePhotoLightbox();
+});
+
+$("itemEditOverlay").addEventListener("click", function(e) {
+  if (e.target === $("itemEditOverlay")) closeItemEditModal();
+});
+$("itemEditCloseBtn").addEventListener("click", closeItemEditModal);
+$("itemEditCancelBtn").addEventListener("click", closeItemEditModal);
+$("itemEditSaveBtn").addEventListener("click", saveItemEdit);
 
 loadHintState();
 showView("main");
