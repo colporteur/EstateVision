@@ -840,6 +840,19 @@
   </div>
 </div>
 
+<!-- Comps modal — appears over everything when the user taps "View N comps".
+     Must be in the DOM before the inline script runs, since the script wires
+     its close handlers at parse time. -->
+<div id="compsModalOverlay" class="comps-modal-overlay hidden">
+  <div class="comps-modal">
+    <div class="comps-modal-head">
+      <div class="comps-modal-title" id="compsModalTitle">Comparable listings</div>
+      <button class="comps-modal-close" id="compsModalCloseBtn" type="button" aria-label="Close">&times;</button>
+    </div>
+    <div class="comps-modal-body" id="compsModalBody"></div>
+  </div>
+</div>
+
 <script>
 "use strict";
 
@@ -3279,17 +3292,6 @@ $("sendToAgentBtn").addEventListener("click", sendToAgent);
 // Kick off the background agent-job poller. Idle if no jobs in flight.
 startAgentPolling();
 </script>
-
-<!-- Comps modal — appears over everything when the user taps "View N comps" -->
-<div id="compsModalOverlay" class="comps-modal-overlay hidden">
-  <div class="comps-modal">
-    <div class="comps-modal-head">
-      <div class="comps-modal-title" id="compsModalTitle">Comparable listings</div>
-      <button class="comps-modal-close" id="compsModalCloseBtn" type="button" aria-label="Close">&times;</button>
-    </div>
-    <div class="comps-modal-body" id="compsModalBody"></div>
-  </div>
-</div>
 
 </body>
 </html>
