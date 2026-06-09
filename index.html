@@ -546,6 +546,133 @@
     font-style: italic;
   }
 
+  /* Profiles UI */
+  .profile-bar {
+    display: flex; align-items: center; gap: 10px;
+    background: #1a2238; border: 1px solid #2a4570;
+    border-radius: 8px; padding: 8px 12px;
+    margin-bottom: 12px;
+  }
+  .profile-bar-label {
+    font-size: 0.7em; color: #6f8fbf;
+    text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .profile-bar-name {
+    flex: 1; min-width: 0;
+    font-size: 0.95em; color: #d0e2ff; font-weight: 600;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .profile-bar-btn {
+    width: auto; padding: 6px 12px; margin: 0;
+    background: #2a3a5a; border: 1px solid #4570a0;
+    color: #d0e2ff; font-size: 0.85em;
+    border-radius: 6px;
+  }
+  .profile-bar-btn:active { background: #3a4a6a; }
+  .profile-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px;
+    background: #222; border: 1px solid #333;
+    border-radius: 8px; margin-bottom: 8px;
+  }
+  .profile-row.is-active { border-color: #4570a0; background: #1a2238; }
+  .profile-row-name { flex: 1; min-width: 0; color: #e8e8e8; word-break: break-word; }
+  .profile-row-active-badge {
+    display: inline-block; background: #4570a0; color: white;
+    font-size: 0.62em; font-weight: 600; padding: 2px 7px;
+    border-radius: 4px; margin-left: 6px; text-transform: uppercase;
+    letter-spacing: 0.08em; vertical-align: middle;
+  }
+  .profile-row-count { color: #888; font-size: 0.8em; flex-shrink: 0; }
+  .profile-row-btns { display: flex; gap: 4px; flex-shrink: 0; }
+  .profile-row-btns button {
+    width: auto; padding: 6px 10px; margin: 0;
+    background: #2a2a2a; border: 1px solid #444;
+    color: #ccc; font-size: 0.85em; border-radius: 6px;
+  }
+  .profile-row-btns button.apply {
+    background: #2a3a5a; border-color: #4570a0; color: #d0e2ff; font-weight: 600;
+  }
+  .profile-slot-row {
+    display: flex; gap: 6px; align-items: center; margin-bottom: 6px;
+  }
+  .profile-slot-row .slot-num {
+    width: 26px; text-align: right; color: #888; font-size: 0.85em; flex-shrink: 0;
+  }
+  .profile-slot-row input {
+    flex: 1; margin: 0;
+  }
+  .profile-slot-row button {
+    width: auto; padding: 8px 10px; margin: 0;
+    background: #2a2a2a; border: 1px solid #444; color: #aaa;
+    border-radius: 6px; font-size: 1em; line-height: 1;
+    flex-shrink: 0;
+  }
+  .profile-slot-row button:active { background: #3a1f1f; color: #ff8888; }
+
+  /* Bid lines */
+  .bidline-controls {
+    display: flex; gap: 6px; margin-top: 12px;
+  }
+  .bidline-controls button {
+    flex: 1; padding: 8px 10px; margin: 0;
+    background: #1a2238; border: 1px solid #2a4570;
+    color: #aac8ff; font-size: 0.85em; border-radius: 6px;
+  }
+  .bidline-controls button:active { background: #2a3550; }
+  .bidline-row {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 8px;
+    background: linear-gradient(90deg, transparent 0%, #1a2238 30%, #1a2238 70%, transparent 100%);
+    border-top: 1px dashed #4570a0;
+    border-bottom: 1px dashed #4570a0;
+    margin: 4px 0;
+    font-size: 0.9em;
+  }
+  .bidline-label {
+    color: #6f8fbf; text-transform: uppercase; font-size: 0.7em; letter-spacing: 0.06em;
+    flex-shrink: 0;
+  }
+  .bidline-value-wrap {
+    display: inline-flex; align-items: center;
+    background: #0f0f0f; border: 1px solid #2a4570; border-radius: 6px;
+    padding: 2px 6px;
+  }
+  .bidline-value-wrap .prefix { color: #888; }
+  .bidline-value-wrap input {
+    background: transparent; border: none; outline: none;
+    color: #d0e2ff; font-weight: 600; font-size: 1em;
+    width: 60px; padding: 0; margin: 0; text-align: right;
+    font-family: inherit;
+  }
+  .bidline-bump {
+    width: auto; padding: 4px 10px; margin: 0;
+    background: #2a2a2a; border: 1px solid #4570a0; color: #aac8ff;
+    border-radius: 6px; font-size: 0.85em; font-weight: 600;
+  }
+  .bidline-bump:active { background: #3a4a6a; }
+  .bidline-x {
+    width: auto; padding: 4px 10px; margin: 0;
+    background: #2a2a2a; border: 1px solid #444; color: #888;
+    border-radius: 6px; font-size: 1em; line-height: 1;
+  }
+  .bidline-x:active { background: #3a1f1f; color: #ff8888; }
+  .bidline-auto-badge {
+    font-size: 0.65em; color: #6f8fbf;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    margin-left: 4px;
+  }
+  .item-bump-row {
+    display: flex; gap: 4px; margin-top: 4px;
+  }
+  .item-bump-btn {
+    width: auto; padding: 3px 8px; margin: 0;
+    background: #0f0f0f; color: #bbb;
+    border: 1px solid #333; border-radius: 4px;
+    font-size: 0.75em; font-weight: 500; line-height: 1.1;
+  }
+  .item-bump-btn:active { background: #2a2a2a; }
+
   /* Settings: ROI matrix */
   .settings-subhead {
     font-size: 0.8em; color: #888; text-transform: uppercase; letter-spacing: 0.06em;
@@ -816,6 +943,11 @@
 
 <div id="view-groups" class="hidden">
   <button class="back-btn" id="groupsBackToMainBtn">&larr; Back</button>
+  <div class="profile-bar">
+    <div class="profile-bar-label">Profile</div>
+    <div class="profile-bar-name" id="profileBarName">Default</div>
+    <button class="profile-bar-btn" id="openProfilesBtn" type="button">Profiles&hellip;</button>
+  </div>
   <div class="footnote" style="margin-bottom:8px;">Active group receives single-tap saves. Tap a row to open.</div>
   <div id="groupsList"></div>
 </div>
@@ -829,14 +961,43 @@
   <div class="sort-toggle" id="groupSortToggle">
     <button type="button" id="sortByMaxBuyBtn" class="active">Max Buy &#9660;</button>
     <button type="button" id="sortByCostBtn">Cost &#9660;</button>
+    <button type="button" id="sortByLowestBtn">Lowest &#9660;</button>
+    <button type="button" id="sortByHighestBtn">Highest &#9660;</button>
   </div>
   <div id="groupItemsList"></div>
   <div id="groupEmpty" class="hidden" style="text-align:center; color:#666; padding: 30px 16px;">
     No items in this group yet.
   </div>
+  <div class="bidline-controls" id="bidLineControls">
+    <button class="bidline-add-btn" id="addBidLineBtn" type="button">+ Bid line</button>
+    <button class="bidline-reset-btn" id="resetBidLinesBtn" type="button">Reset lines</button>
+  </div>
   <div class="row" style="margin-top:16px;">
     <button class="danger" id="groupClearBtn">Clear all</button>
     <button class="primary" id="groupCloseoutBtn">Close out &rarr; next</button>
+  </div>
+</div>
+
+<div id="view-profiles" class="hidden">
+  <button class="back-btn" id="profilesBackBtn">&larr; Back to Groups</button>
+  <div class="footnote" style="margin-bottom:8px;">A profile is a saved lineup of table or room names. Loading a profile clears the current groups and replaces them with the profile's slots.</div>
+  <div id="profilesList"></div>
+  <div class="row" style="margin-top:12px;">
+    <button class="primary" id="newProfileBtn">+ New profile</button>
+    <button id="saveCurrentAsProfileBtn">Save current as profile</button>
+  </div>
+</div>
+
+<div id="view-profile-edit" class="hidden">
+  <button class="back-btn" id="profileEditBackBtn">&larr; Back to Profiles</button>
+  <label for="profileNameInput">Profile name</label>
+  <input type="text" id="profileNameInput" maxlength="40" autocomplete="off" spellcheck="false">
+  <div class="footnote" style="margin: 8px 0 4px;">Slots (each becomes a table/room in this lineup)</div>
+  <div id="profileSlotsList"></div>
+  <button id="addProfileSlotBtn">+ Add slot</button>
+  <div class="row" style="margin-top:12px;">
+    <button class="primary" id="saveProfileBtn">Save</button>
+    <button class="danger" id="deleteProfileBtn">Delete profile</button>
   </div>
 </div>
 
@@ -867,20 +1028,42 @@ var LS_STICKY = "itemid.sticky";
 var LS_ROI    = "itemid.roiMatrix";
 var LS_TAXBP  = "itemid.taxBpPct";
 var LS_ACTIVE_GROUP = "itemid.activeGroup";
+var LS_ACTIVE_PROFILE = "itemid.activeProfile";
 var LS_AGENT_URL = "itemid.agentBaseUrl";
 var LS_AGENT_KEY = "itemid.agentApiKey";
 var TAXBP_DEFAULT = 10;
-var GROUP_COUNT = 14;
+// Active profile's slot count, cached for synchronous access. Set by
+// refreshActiveProfileCache() at app load and after every profile apply/edit.
+var activeProfileCount = 14;
+var activeProfileSlots = [];  // [{name}, ...] cached for synchronous reads
+
+function groupCount() { return activeProfileCount; }
+
+async function refreshActiveProfileCache() {
+  try {
+    var p = await getActiveProfile();
+    if (p && Array.isArray(p.slots) && p.slots.length > 0) {
+      activeProfileCount = p.slots.length;
+      activeProfileSlots = p.slots.slice();
+    } else {
+      activeProfileCount = 14;
+      activeProfileSlots = [];
+    }
+  } catch (e) {
+    activeProfileCount = 14;
+    activeProfileSlots = [];
+  }
+}
 
 function getActiveGroupId() {
   var raw = localStorage.getItem(LS_ACTIVE_GROUP);
   var n = parseInt(raw, 10);
-  if (!isFinite(n) || n < 1 || n > GROUP_COUNT) return 1;
+  if (!isFinite(n) || n < 1 || n > groupCount()) return 1;
   return n;
 }
 function setActiveGroupId(n) {
   n = parseInt(n, 10);
-  if (!isFinite(n) || n < 1 || n > GROUP_COUNT) return;
+  if (!isFinite(n) || n < 1 || n > groupCount()) return;
   localStorage.setItem(LS_ACTIVE_GROUP, String(n));
 }
 
@@ -2287,15 +2470,18 @@ function showError(msg) {
 }
 
 var DB_NAME = "itemid";
-var DB_VERSION = 2;
+var DB_VERSION = 3;
 var STORE = "items";
 var GROUPS_STORE = "groups";
+var PROFILES_STORE = "profiles";
+var DEFAULT_PROFILE_ID = 1;
 
 function openDb() {
   return new Promise(function(resolve, reject) {
     var req = indexedDB.open(DB_NAME, DB_VERSION);
-    req.onupgradeneeded = function() {
+    req.onupgradeneeded = function(ev) {
       var db = req.result;
+      var oldVersion = ev.oldVersion || 0;
       if (!db.objectStoreNames.contains(STORE)) {
         var os = db.createObjectStore(STORE, { keyPath: "id", autoIncrement: true });
         os.createIndex("timestamp", "timestamp", { unique: false });
@@ -2303,9 +2489,24 @@ function openDb() {
       if (!db.objectStoreNames.contains(GROUPS_STORE)) {
         var gs = db.createObjectStore(GROUPS_STORE, { keyPath: "id" });
         // Seed 14 default groups (Table 1 .. Table 14)
-        for (var i = 1; i <= GROUP_COUNT; i++) {
-          gs.add({ id: i, name: "Table " + i, items: [] });
+        for (var i = 1; i <= 14; i++) {
+          gs.add({ id: i, name: "Table " + i, items: [], bidLines: [] });
         }
+      }
+      // v3: profiles store — list of named templates of slot lineups.
+      // Items are NOT attached to profiles; they live on the active groups store.
+      if (!db.objectStoreNames.contains(PROFILES_STORE)) {
+        var ps = db.createObjectStore(PROFILES_STORE, { keyPath: "id", autoIncrement: true });
+        // Seed the Default profile to match the existing 14 numbered tables.
+        var defaultSlots = [];
+        for (var k = 1; k <= 14; k++) defaultSlots.push({ name: "Table " + k });
+        ps.add({
+          id: DEFAULT_PROFILE_ID,
+          name: "Default (Tables 1-14)",
+          slots: defaultSlots,
+          createdAt: Date.now(),
+          builtin: true
+        });
       }
     };
     req.onsuccess = function() { resolve(req.result); };
@@ -2314,6 +2515,70 @@ function openDb() {
 }
 function groupsStore(mode) {
   return openDb().then(function(db) { return db.transaction(GROUPS_STORE, mode).objectStore(GROUPS_STORE); });
+}
+function profilesStore(mode) {
+  return openDb().then(function(db) { return db.transaction(PROFILES_STORE, mode).objectStore(PROFILES_STORE); });
+}
+async function profilesGetAll() {
+  var store = await profilesStore("readonly");
+  return new Promise(function(res, rej) {
+    var r = store.getAll();
+    r.onsuccess = function() {
+      var arr = (r.result || []).slice();
+      arr.sort(function(a, b) {
+        // Default profile first, then by createdAt ascending.
+        if (a.id === DEFAULT_PROFILE_ID) return -1;
+        if (b.id === DEFAULT_PROFILE_ID) return 1;
+        return (a.createdAt || 0) - (b.createdAt || 0);
+      });
+      res(arr);
+    };
+    r.onerror = function() { rej(r.error); };
+  });
+}
+async function profilesGet(id) {
+  var store = await profilesStore("readonly");
+  return new Promise(function(res, rej) {
+    var r = store.get(id);
+    r.onsuccess = function() { res(r.result); };
+    r.onerror   = function() { rej(r.error); };
+  });
+}
+async function profilesPut(doc) {
+  var store = await profilesStore("readwrite");
+  return new Promise(function(res, rej) {
+    var r = store.put(doc);
+    r.onsuccess = function() { res(r.result); };
+    r.onerror   = function() { rej(r.error); };
+  });
+}
+async function profilesAdd(doc) {
+  var store = await profilesStore("readwrite");
+  return new Promise(function(res, rej) {
+    var r = store.add(doc);
+    r.onsuccess = function() { res(r.result); };
+    r.onerror   = function() { rej(r.error); };
+  });
+}
+async function profilesDelete(id) {
+  if (id === DEFAULT_PROFILE_ID) throw new Error("The default profile cannot be deleted.");
+  var store = await profilesStore("readwrite");
+  return new Promise(function(res, rej) {
+    var r = store.delete(id);
+    r.onsuccess = function() { res(); };
+    r.onerror   = function() { rej(r.error); };
+  });
+}
+async function getActiveProfile() {
+  var id = parseInt(localStorage.getItem(LS_ACTIVE_PROFILE), 10);
+  if (!isFinite(id) || id < 1) id = DEFAULT_PROFILE_ID;
+  var p = await profilesGet(id);
+  if (!p) p = await profilesGet(DEFAULT_PROFILE_ID);
+  return p;
+}
+function setActiveProfileId(id) {
+  if (!isFinite(parseInt(id, 10))) return;
+  localStorage.setItem(LS_ACTIVE_PROFILE, String(id));
 }
 async function groupsGetAll() {
   var store = await groupsStore("readonly");
@@ -2591,7 +2856,29 @@ $("saveHistoryBtn").addEventListener("click", async function() {
 });
 
 var currentGroupId = null;
-var groupSortMode = "maxBuy"; // "maxBuy" (default) or "cost", both descending
+var groupSortMode = "maxBuy"; // "maxBuy" | "cost" | "lowest" | "highest", all descending
+
+// Resolve the numeric sort key per item for the current sort mode. Null if
+// the data needed for this sort isn't present (item drops to the end).
+function sortKeyOf(it) {
+  var mb = (it && it.maxBuyNum != null && isFinite(it.maxBuyNum)) ? it.maxBuyNum : null;
+  var co = (it && it.cost      != null && isFinite(it.cost))      ? it.cost      : null;
+  if (groupSortMode === "cost")    return co;
+  if (groupSortMode === "lowest") {
+    if (mb == null && co == null) return null;
+    if (mb == null) return co;
+    if (co == null) return mb;
+    return Math.min(mb, co);
+  }
+  if (groupSortMode === "highest") {
+    if (mb == null && co == null) return null;
+    if (mb == null) return co;
+    if (co == null) return mb;
+    return Math.max(mb, co);
+  }
+  // Default = maxBuy
+  return mb;
+}
 
 function showView(name) {
   hide($("view-main"));
@@ -2599,6 +2886,8 @@ function showView(name) {
   hide($("view-history-detail"));
   hide($("view-groups"));
   hide($("view-group-detail"));
+  hide($("view-profiles"));
+  hide($("view-profile-edit"));
   hide($("settings"));
   if (name === "main") {
     show($("view-main"));
@@ -2619,6 +2908,13 @@ function showView(name) {
     show($("view-group-detail"));
     $("subtitle").textContent = "Group details";
     renderGroupDetail(currentGroupId);
+  } else if (name === "profiles") {
+    show($("view-profiles"));
+    $("subtitle").textContent = "Lineup profiles";
+    renderProfilesList();
+  } else if (name === "profile-edit") {
+    show($("view-profile-edit"));
+    $("subtitle").textContent = "Edit profile";
   }
   window.scrollTo({ top: 0, behavior: "auto" });
 }
@@ -2628,6 +2924,9 @@ $("histBackBtn").addEventListener("click", function() { showView("history"); });
 $("groupsBtn").addEventListener("click", function() { showView("groups"); });
 $("groupsBackToMainBtn").addEventListener("click", function() { showView("main"); });
 $("groupDetailBackBtn").addEventListener("click", function() { showView("groups"); });
+$("openProfilesBtn").addEventListener("click", function() { showView("profiles"); });
+$("profilesBackBtn").addEventListener("click", function() { showView("groups"); });
+$("profileEditBackBtn").addEventListener("click", function() { showView("profiles"); });
 
 async function renderGroupsList() {
   var list = $("groupsList");
@@ -2648,6 +2947,234 @@ async function renderGroupsList() {
     });
     list.appendChild(row);
   });
+  // Update the profile bar at the top of the Groups view.
+  var p = await getActiveProfile();
+  $("profileBarName").textContent = (p && p.name) || "Default";
+}
+
+/* ============================================================
+ * Profiles: management UI + apply flow
+ * ============================================================ */
+
+var editingProfileId = null;  // null when creating a new profile
+var editingProfileSlots = [];
+
+async function renderProfilesList() {
+  var list = $("profilesList");
+  list.innerHTML = "";
+  var profiles = await profilesGetAll();
+  var activeProfile = await getActiveProfile();
+  var activeId = activeProfile ? activeProfile.id : DEFAULT_PROFILE_ID;
+  profiles.forEach(function(p) {
+    var row = document.createElement("div");
+    row.className = "profile-row" + (p.id === activeId ? " is-active" : "");
+    var slotCount = Array.isArray(p.slots) ? p.slots.length : 0;
+    var nameHtml = escapeHtml(p.name) +
+      (p.id === activeId ? ' <span class="profile-row-active-badge">Active</span>' : "");
+    var btns = '';
+    if (p.id !== activeId) {
+      btns += '<button type="button" class="apply" data-action="apply" data-id="' + p.id + '">Apply</button>';
+    }
+    btns += '<button type="button" data-action="edit" data-id="' + p.id + '">Edit</button>';
+    row.innerHTML =
+      '<div class="profile-row-name">' + nameHtml + '</div>' +
+      '<div class="profile-row-count">' + slotCount + ' slot' + (slotCount === 1 ? "" : "s") + '</div>' +
+      '<div class="profile-row-btns">' + btns + '</div>';
+    list.appendChild(row);
+  });
+  // Wire row buttons.
+  list.querySelectorAll("button[data-action]").forEach(function(btn) {
+    var action = btn.getAttribute("data-action");
+    var id = parseInt(btn.getAttribute("data-id"), 10);
+    if (action === "apply") {
+      btn.addEventListener("click", function() { applyProfile(id); });
+    } else if (action === "edit") {
+      btn.addEventListener("click", function() { openEditProfile(id); });
+    }
+  });
+}
+
+async function openEditProfile(profileId) {
+  var p = await profilesGet(profileId);
+  if (!p) return;
+  editingProfileId = p.id;
+  editingProfileSlots = (p.slots || []).map(function(s) { return { name: s.name || "" }; });
+  $("profileNameInput").value = p.name || "";
+  $("deleteProfileBtn").style.display = (p.id === DEFAULT_PROFILE_ID) ? "none" : "";
+  renderProfileSlotsEditor();
+  showView("profile-edit");
+}
+
+function openNewProfile() {
+  editingProfileId = null;
+  editingProfileSlots = [{ name: "Slot 1" }, { name: "Slot 2" }, { name: "Slot 3" }];
+  $("profileNameInput").value = "New profile";
+  $("deleteProfileBtn").style.display = "none";
+  renderProfileSlotsEditor();
+  showView("profile-edit");
+}
+
+function renderProfileSlotsEditor() {
+  var listEl = $("profileSlotsList");
+  listEl.innerHTML = "";
+  editingProfileSlots.forEach(function(slot, idx) {
+    var row = document.createElement("div");
+    row.className = "profile-slot-row";
+    row.innerHTML =
+      '<span class="slot-num">' + (idx + 1) + '.</span>' +
+      '<input type="text" maxlength="40" autocomplete="off" spellcheck="false" placeholder="Name">' +
+      '<button type="button" aria-label="Remove">&times;</button>';
+    var input = row.querySelector("input");
+    input.value = slot.name || "";
+    input.addEventListener("input", function() {
+      editingProfileSlots[idx].name = input.value;
+    });
+    row.querySelector("button").addEventListener("click", function() {
+      editingProfileSlots.splice(idx, 1);
+      renderProfileSlotsEditor();
+    });
+    listEl.appendChild(row);
+  });
+}
+
+$("addProfileSlotBtn").addEventListener("click", function() {
+  editingProfileSlots.push({ name: "Slot " + (editingProfileSlots.length + 1) });
+  renderProfileSlotsEditor();
+});
+
+$("newProfileBtn").addEventListener("click", openNewProfile);
+
+$("saveCurrentAsProfileBtn").addEventListener("click", async function() {
+  // Capture current group names as a new profile.
+  var groups = await groupsGetAll();
+  if (groups.length === 0) {
+    alert("No tables to capture.");
+    return;
+  }
+  var name = prompt("Name for the new profile:", "My profile");
+  if (!name || !name.trim()) return;
+  var slots = groups.map(function(g) { return { name: g.name }; });
+  await profilesAdd({
+    name: name.trim(),
+    slots: slots,
+    createdAt: Date.now()
+  });
+  renderProfilesList();
+});
+
+$("saveProfileBtn").addEventListener("click", async function() {
+  var name = ($("profileNameInput").value || "").trim();
+  if (!name) { alert("Profile name is required."); return; }
+  var slots = editingProfileSlots.filter(function(s) { return (s.name || "").trim(); });
+  if (slots.length === 0) { alert("At least one slot is required."); return; }
+  if (editingProfileId == null) {
+    await profilesAdd({
+      name: name,
+      slots: slots,
+      createdAt: Date.now()
+    });
+  } else {
+    var existing = await profilesGet(editingProfileId);
+    if (!existing) return;
+    existing.name = name;
+    existing.slots = slots;
+    await profilesPut(existing);
+    // If editing the active profile, refresh cache and re-seed slots on the
+    // groups store to match — but DON'T clear items. We just rename and
+    // add/remove slots as needed.
+    var active = await getActiveProfile();
+    if (active && active.id === editingProfileId) {
+      await reseedGroupsForProfileNoClear(existing);
+      await refreshActiveProfileCache();
+      updateSaveToGroupLabel();
+    }
+  }
+  showView("profiles");
+});
+
+$("deleteProfileBtn").addEventListener("click", async function() {
+  if (editingProfileId == null) return;
+  if (editingProfileId === DEFAULT_PROFILE_ID) return;
+  if (!confirm("Delete this profile? Items in the current tables aren't affected.")) return;
+  // If the deleted profile is the active one, fall back to Default.
+  var active = await getActiveProfile();
+  if (active && active.id === editingProfileId) {
+    setActiveProfileId(DEFAULT_PROFILE_ID);
+    var defaultProfile = await profilesGet(DEFAULT_PROFILE_ID);
+    await reseedGroupsForProfile(defaultProfile, /*clearItems*/ false);
+    await refreshActiveProfileCache();
+    updateSaveToGroupLabel();
+  }
+  await profilesDelete(editingProfileId);
+  showView("profiles");
+});
+
+async function applyProfile(profileId) {
+  var p = await profilesGet(profileId);
+  if (!p) return;
+  // Confirm if any items are present in the current tables.
+  var groups = await groupsGetAll();
+  var totalItems = groups.reduce(function(sum, g) { return sum + ((g.items || []).length); }, 0);
+  if (totalItems > 0) {
+    if (!confirm("This will clear " + totalItems + " item" + (totalItems === 1 ? "" : "s") +
+                 " from the current tables and load '" + p.name + "'. Items in History are not affected. Continue?")) {
+      return;
+    }
+  }
+  await reseedGroupsForProfile(p, /*clearItems*/ true);
+  setActiveProfileId(profileId);
+  setActiveGroupId(1);
+  await refreshActiveProfileCache();
+  updateSaveToGroupLabel();
+  renderProfilesList();
+}
+
+/* Re-create the groups store rows to match the profile's slots. */
+async function reseedGroupsForProfile(profile, clearItems) {
+  var db = await openDb();
+  return new Promise(function(resolve, reject) {
+    var tx = db.transaction(GROUPS_STORE, "readwrite");
+    var store = tx.objectStore(GROUPS_STORE);
+    var slots = (profile && profile.slots) || [];
+    // Clear existing rows.
+    var clearReq = store.clear();
+    clearReq.onsuccess = function() {
+      slots.forEach(function(slot, i) {
+        store.add({ id: i + 1, name: slot.name || ("Slot " + (i + 1)), items: [], bidLines: [] });
+      });
+    };
+    tx.oncomplete = resolve;
+    tx.onerror = function() { reject(tx.error); };
+    // suppress unused warning
+    if (clearItems) { /* contract: clearItems is implicit by the .clear() above */ }
+  });
+}
+
+/* Used when EDITING the active profile: preserve items for existing slots by
+ * matching ids. For added slots, create empty. For removed slots, drop. */
+async function reseedGroupsForProfileNoClear(profile) {
+  var existing = await groupsGetAll();
+  var byId = {};
+  existing.forEach(function(g) { byId[g.id] = g; });
+  var slots = (profile && profile.slots) || [];
+  var db = await openDb();
+  return new Promise(function(resolve, reject) {
+    var tx = db.transaction(GROUPS_STORE, "readwrite");
+    var store = tx.objectStore(GROUPS_STORE);
+    store.clear().onsuccess = function() {
+      slots.forEach(function(slot, i) {
+        var prev = byId[i + 1];
+        store.add({
+          id: i + 1,
+          name: slot.name || ("Slot " + (i + 1)),
+          items: prev ? (prev.items || []) : [],
+          bidLines: prev ? (prev.bidLines || []) : []
+        });
+      });
+    };
+    tx.oncomplete = resolve;
+    tx.onerror = function() { reject(tx.error); };
+  });
 }
 
 function fmtDollar(n) { return "$" + Number(n).toFixed(2); }
@@ -2657,12 +3184,177 @@ function fmtSigned(n) {
   return "$" + n.toFixed(2);
 }
 
+/* ============================================================
+ * Bid lines: auto-gen, refresh on sort change, render
+ *
+ * Each group has a `bidLines` array of {value: number, isManual: bool}.
+ * - Auto lines: when items.length >= 3 and no lines exist yet, place 2 auto
+ *   lines at the 1/3 and 2/3 boundaries by current sort key, rounded to
+ *   whole dollars.
+ * - Auto lines recompute on sort change.
+ * - Manual lines (created by user edit, add, or bump) keep their value
+ *   regardless of sort.
+ * - "Reset lines" wipes all bid lines and regenerates auto defaults.
+ * ============================================================ */
+
+function bumpUpToNextDollar(v)   { return Math.floor(v) + 1; }
+function bumpDownToNextDollar(v) { return Math.ceil(v)  - 1; }
+
+function computeAutoBidLineValues(items, sortKeyFn) {
+  // items must be sorted desc by sortKeyFn already. Returns [v1, v2] for the
+  // two default lines (top-third boundary and bottom-third boundary).
+  var n = items.length;
+  if (n < 3) return [];
+  var idxA = Math.floor(n / 3);            // top-third boundary
+  var idxB = Math.floor((2 * n) / 3);      // bottom-third boundary
+  function boundaryValue(idx) {
+    var prev = (idx - 1 >= 0)   ? sortKeyFn(items[idx - 1]) : null;
+    var curr = (idx     < n)    ? sortKeyFn(items[idx])     : null;
+    var pickFrom = [prev, curr].filter(function(v) { return v != null && isFinite(v); });
+    if (pickFrom.length === 0) return null;
+    if (pickFrom.length === 1) return Math.round(pickFrom[0]);
+    return Math.round((pickFrom[0] + pickFrom[1]) / 2);
+  }
+  var va = boundaryValue(idxA);
+  var vb = boundaryValue(idxB);
+  var out = [];
+  if (va != null) out.push(va);
+  if (vb != null && vb !== va) out.push(vb);
+  return out;
+}
+
+async function ensureAndRefreshBidLines(g, sortedItems) {
+  // Mutates g.bidLines in place: ensures auto-defaults exist when applicable,
+  // and refreshes any non-manual lines to current sort values. Returns whether
+  // anything changed (so caller can persist).
+  if (!Array.isArray(g.bidLines)) g.bidLines = [];
+  var changed = false;
+  var n = sortedItems.length;
+
+  // Drop auto lines if items dropped below the threshold (3) \u2014 they were
+  // generated under different conditions and shouldn't linger if there's
+  // not enough data.
+  if (n < 3) {
+    var beforeLen = g.bidLines.length;
+    g.bidLines = g.bidLines.filter(function(line) { return line.isManual; });
+    if (g.bidLines.length !== beforeLen) changed = true;
+    return changed;
+  }
+
+  // If no lines at all, generate the two defaults.
+  if (g.bidLines.length === 0) {
+    var vals = computeAutoBidLineValues(sortedItems, sortKeyOf);
+    vals.forEach(function(v) { g.bidLines.push({ value: v, isManual: false }); });
+    if (vals.length > 0) changed = true;
+  } else {
+    // Refresh the non-manual lines.
+    var autoCount = g.bidLines.filter(function(l) { return !l.isManual; }).length;
+    if (autoCount > 0) {
+      var fresh = computeAutoBidLineValues(sortedItems, sortKeyOf);
+      var fi = 0;
+      g.bidLines.forEach(function(line) {
+        if (line.isManual) return;
+        var newVal = fresh[fi++];
+        if (newVal != null && line.value !== newVal) { line.value = newVal; changed = true; }
+      });
+    }
+  }
+  return changed;
+}
+
+function renderBidLineRow(line, lineIdx, groupId) {
+  var row = document.createElement("div");
+  row.className = "bidline-row";
+  row.innerHTML =
+    '<span class="bidline-label">Bid</span>' +
+    '<span class="bidline-value-wrap">' +
+      '<span class="prefix">$</span>' +
+      '<input type="number" step="1" min="0" inputmode="numeric" value="' + Number(line.value).toFixed(0) + '">' +
+    '</span>' +
+    (line.isManual ? '' : '<span class="bidline-auto-badge">auto</span>') +
+    '<button type="button" class="bidline-bump" data-dir="up">+$1</button>' +
+    '<button type="button" class="bidline-bump" data-dir="down">\u2212$1</button>' +
+    '<button type="button" class="bidline-x" aria-label="Remove">&times;</button>';
+
+  var input = row.querySelector("input");
+  input.addEventListener("change", async function() {
+    var v = parseFloat(input.value);
+    if (!isFinite(v)) return;
+    var g = await groupsGet(groupId);
+    if (!g || !Array.isArray(g.bidLines) || !g.bidLines[lineIdx]) return;
+    g.bidLines[lineIdx].value = Math.round(v);
+    g.bidLines[lineIdx].isManual = true;
+    await groupsPut(g);
+    renderGroupDetail(groupId);
+  });
+  row.querySelectorAll(".bidline-bump").forEach(function(btn) {
+    btn.addEventListener("click", async function() {
+      var dir = btn.getAttribute("data-dir") === "up" ? 1 : -1;
+      var g = await groupsGet(groupId);
+      if (!g || !Array.isArray(g.bidLines) || !g.bidLines[lineIdx]) return;
+      var line = g.bidLines[lineIdx];
+      line.value = dir > 0 ? bumpUpToNextDollar(line.value) : bumpDownToNextDollar(line.value);
+      line.isManual = true;
+      await groupsPut(g);
+      renderGroupDetail(groupId);
+    });
+  });
+  row.querySelector(".bidline-x").addEventListener("click", async function() {
+    var g = await groupsGet(groupId);
+    if (!g || !Array.isArray(g.bidLines)) return;
+    g.bidLines.splice(lineIdx, 1);
+    await groupsPut(g);
+    renderGroupDetail(groupId);
+  });
+  return row;
+}
+
+/* Item bump: adjusts whichever underlying value maps to the active sort key.
+ * Returns the field path that was bumped, for the persist write. */
+function bumpItemForSort(item, direction) {
+  var bumpUp = direction > 0;
+  var bump = bumpUp ? bumpUpToNextDollar : bumpDownToNextDollar;
+  var mb = (item.maxBuyNum != null && isFinite(item.maxBuyNum)) ? item.maxBuyNum : null;
+  var co = (item.cost      != null && isFinite(item.cost))      ? item.cost      : null;
+  var targetField;
+  if (groupSortMode === "cost") {
+    targetField = "cost";
+  } else if (groupSortMode === "maxBuy") {
+    targetField = "value";
+  } else if (groupSortMode === "lowest") {
+    // Move whichever is the smaller of the two so the min advances.
+    if (mb == null && co == null) targetField = "value";
+    else if (mb == null)          targetField = "cost";
+    else if (co == null)          targetField = "value";
+    else                          targetField = (mb < co) ? "value" : "cost";
+  } else if (groupSortMode === "highest") {
+    if (mb == null && co == null) targetField = "value";
+    else if (mb == null)          targetField = "cost";
+    else if (co == null)          targetField = "value";
+    else                          targetField = (mb > co) ? "value" : "cost";
+  } else {
+    targetField = "value";
+  }
+  if (targetField === "cost") {
+    var newCost = bump(co != null ? co : 0);
+    if (newCost < 0) newCost = 0;
+    item.cost = newCost;
+    item.taxBp = (item.cost != null && item.taxBpPct != null) ? item.cost * (item.taxBpPct / 100) : null;
+    // Profit depends on cost; maxBuy does not.
+    recomputeSavedItem(item, item.value, false);
+  } else {
+    var newVal = bump(item.value != null ? item.value : 0);
+    if (newVal < 0) newVal = 0;
+    recomputeSavedItem(item, newVal, false);
+  }
+}
+
 async function renderGroupDetail(groupId) {
   if (groupId == null) { showView("groups"); return; }
   var g = await groupsGet(groupId);
   if (!g) { showView("groups"); return; }
 
-  $("groupNameInput").value = g.name || ("Table " + g.id);
+  $("groupNameInput").value = g.name || ("Slot " + g.id);
   var activeId = getActiveGroupId();
   var setActiveBtn = $("groupSetActiveBtn");
   if (g.id === activeId) {
@@ -2674,69 +3366,117 @@ async function renderGroupDetail(groupId) {
   }
 
   // Reflect current sort mode in the toggle
-  $("sortByMaxBuyBtn").classList.toggle("active", groupSortMode === "maxBuy");
-  $("sortByCostBtn").classList.toggle("active",   groupSortMode === "cost");
+  $("sortByMaxBuyBtn").classList.toggle("active",  groupSortMode === "maxBuy");
+  $("sortByCostBtn").classList.toggle("active",    groupSortMode === "cost");
+  $("sortByLowestBtn").classList.toggle("active",  groupSortMode === "lowest");
+  $("sortByHighestBtn").classList.toggle("active", groupSortMode === "highest");
 
   var items = (g.items || []).slice();
   // Sort descending by the selected key; nulls always last.
-  var keyOf = function(it) {
-    if (groupSortMode === "cost") return (it.cost != null && isFinite(it.cost)) ? it.cost : null;
-    return (it.maxBuyNum != null && isFinite(it.maxBuyNum)) ? it.maxBuyNum : null;
-  };
   items.sort(function(a, b) {
-    var ak = keyOf(a), bk = keyOf(b);
+    var ak = sortKeyOf(a), bk = sortKeyOf(b);
     if (ak == null && bk == null) return 0;
     if (ak == null) return 1;
     if (bk == null) return -1;
     return bk - ak;
   });
 
+  // Update / generate bid lines for this sort. Persist if anything changed.
+  var changed = await ensureAndRefreshBidLines(g, items);
+  if (changed) await groupsPut(g);
+
   var list = $("groupItemsList");
   list.innerHTML = "";
   if (items.length === 0) {
     show($("groupEmpty"));
+    hide($("bidLineControls"));
     return;
   }
   hide($("groupEmpty"));
+  show($("bidLineControls"));
+
+  // Sort bid lines desc by value so they interleave naturally with descending items.
+  var lines = (g.bidLines || []).map(function(line, origIdx) { return { line: line, origIdx: origIdx }; });
+  lines.sort(function(a, b) { return b.line.value - a.line.value; });
+
+  // Merge-walk items + lines so each line appears just above the first item
+  // whose sort-key value is <= the line's value.
+  var li = 0; // line index
   items.forEach(function(it) {
-    var row = document.createElement("div");
-    row.className = "group-item";
-
-    var thumbHtml = it.thumb
-      ? '<img class="group-item-thumb" alt="" src="' + escapeHtml(it.thumb) + '">'
-      : '<div class="group-item-thumb"></div>';
-
-    var parts = [];
-    if (it.value != null)      parts.push("Sale " + fmtDollar(it.value));
-    if (it.str != null)        parts.push("STR " + it.str + "%");
-    if (it.maxBuyText)         parts.push('<span class="num-max">Max ' + escapeHtml(it.maxBuyText) + '</span>');
-    if (it.cost != null)       parts.push('<span class="num-cost">Cost ' + escapeHtml(fmtDollar(it.cost)) + '</span>');
-    if (it.taxBpPct != null)   parts.push("Tax+BP " + Number(it.taxBpPct) + "%");
-    if (it.profitText) {
-      var cls = (it.profitNum != null && it.profitNum < 0) ? "num-neg" : "num-max";
-      parts.push('<span class="' + cls + '">Profit ' + escapeHtml(it.profitText) + '</span>');
+    var k = sortKeyOf(it);
+    // Emit any lines that should go above this item.
+    while (li < lines.length) {
+      var lineVal = lines[li].line.value;
+      var emit = (k == null) || (k <= lineVal);
+      if (!emit) break;
+      list.appendChild(renderBidLineRow(lines[li].line, lines[li].origIdx, groupId));
+      li++;
     }
+    list.appendChild(renderItemRow(it, groupId));
+  });
+  // Any remaining lines (below the lowest item) go at the bottom.
+  while (li < lines.length) {
+    list.appendChild(renderBidLineRow(lines[li].line, lines[li].origIdx, groupId));
+    li++;
+  }
+}
 
-    var agentHtml = renderAgentRowHtml(it);
+function renderItemRow(it, groupId) {
+  var row = document.createElement("div");
+  row.className = "group-item";
 
-    row.innerHTML =
-      thumbHtml +
-      '<div class="group-item-meta">' +
-        '<div class="group-item-query">' + escapeHtml(it.query || "(no query)") + '</div>' +
-        '<div class="group-item-nums">' + parts.join(" &middot; ") + '</div>' +
-        agentHtml +
+  var thumbHtml = it.thumb
+    ? '<img class="group-item-thumb" alt="" src="' + escapeHtml(it.thumb) + '">'
+    : '<div class="group-item-thumb"></div>';
+
+  var parts = [];
+  if (it.value != null)      parts.push("Sale " + fmtDollar(it.value));
+  if (it.str != null)        parts.push("STR " + it.str + "%");
+  if (it.maxBuyText)         parts.push('<span class="num-max">Max ' + escapeHtml(it.maxBuyText) + '</span>');
+  if (it.cost != null)       parts.push('<span class="num-cost">Cost ' + escapeHtml(fmtDollar(it.cost)) + '</span>');
+  if (it.taxBpPct != null)   parts.push("Tax+BP " + Number(it.taxBpPct) + "%");
+  if (it.profitText) {
+    var cls = (it.profitNum != null && it.profitNum < 0) ? "num-neg" : "num-max";
+    parts.push('<span class="' + cls + '">Profit ' + escapeHtml(it.profitText) + '</span>');
+  }
+
+  var agentHtml = renderAgentRowHtml(it);
+
+  row.innerHTML =
+    thumbHtml +
+    '<div class="group-item-meta">' +
+      '<div class="group-item-query">' + escapeHtml(it.query || "(no query)") + '</div>' +
+      '<div class="group-item-nums">' + parts.join(" &middot; ") + '</div>' +
+      '<div class="item-bump-row">' +
+        '<button type="button" class="item-bump-btn" data-bump="up">+$1</button>' +
+        '<button type="button" class="item-bump-btn" data-bump="down">−$1</button>' +
       '</div>' +
-      '<button class="group-item-x" type="button" title="Remove">&times;</button>';
+      agentHtml +
+    '</div>' +
+    '<button class="group-item-x" type="button" title="Remove">&times;</button>';
 
-    row.querySelector(".group-item-x").addEventListener("click", async function(e) {
+  row.querySelector(".group-item-x").addEventListener("click", async function(e) {
+    e.stopPropagation();
+    await groupsRemoveItem(groupId, it.savedAt);
+    renderGroupDetail(groupId);
+  });
+  // Bump buttons.
+  row.querySelectorAll(".item-bump-btn").forEach(function(btn) {
+    btn.addEventListener("click", async function(e) {
       e.stopPropagation();
-      await groupsRemoveItem(groupId, it.savedAt);
+      var dir = btn.getAttribute("data-bump") === "up" ? 1 : -1;
+      var g = await groupsGet(groupId);
+      if (!g || !Array.isArray(g.items)) return;
+      var stored = g.items.find(function(x) { return x.savedAt === it.savedAt; });
+      if (!stored) return;
+      bumpItemForSort(stored, dir);
+      await groupsPut(g);
       renderGroupDetail(groupId);
     });
-    // Wire tap-to-apply on any agent price chips inside this row.
-    wireAgentChipsForGroupItem(row, groupId, it.savedAt);
-    list.appendChild(row);
   });
+  // Wire tap-to-apply on any agent price chips inside this row.
+  wireAgentChipsForGroupItem(row, groupId, it.savedAt);
+  return row;
 }
 
 /* Build an HTML snippet showing the agent's status/results for a saved item.
@@ -2969,6 +3709,51 @@ $("groupSetActiveBtn").addEventListener("click", function() {
   renderGroupDetail(currentGroupId);
 });
 
+$("sortByLowestBtn").addEventListener("click", function() {
+  if (groupSortMode === "lowest") return;
+  groupSortMode = "lowest";
+  renderGroupDetail(currentGroupId);
+});
+
+$("addBidLineBtn").addEventListener("click", async function() {
+  if (currentGroupId == null) return;
+  var g = await groupsGet(currentGroupId);
+  if (!g) return;
+  if (!Array.isArray(g.bidLines)) g.bidLines = [];
+  // Default value: midpoint of existing items if any, else $1.
+  var items = (g.items || []).slice();
+  items.sort(function(a, b) {
+    var ak = sortKeyOf(a), bk = sortKeyOf(b);
+    if (ak == null && bk == null) return 0;
+    if (ak == null) return 1;
+    if (bk == null) return -1;
+    return bk - ak;
+  });
+  var def = 1;
+  if (items.length > 0) {
+    var mid = items[Math.floor(items.length / 2)];
+    var v = sortKeyOf(mid);
+    if (v != null) def = Math.max(1, Math.round(v));
+  }
+  g.bidLines.push({ value: def, isManual: true });
+  await groupsPut(g);
+  renderGroupDetail(currentGroupId);
+});
+
+$("resetBidLinesBtn").addEventListener("click", async function() {
+  if (currentGroupId == null) return;
+  var g = await groupsGet(currentGroupId);
+  if (!g) return;
+  g.bidLines = [];
+  await groupsPut(g);
+  renderGroupDetail(currentGroupId);
+});
+$("sortByHighestBtn").addEventListener("click", function() {
+  if (groupSortMode === "highest") return;
+  groupSortMode = "highest";
+  renderGroupDetail(currentGroupId);
+});
+
 $("sortByMaxBuyBtn").addEventListener("click", function() {
   if (groupSortMode === "maxBuy") return;
   groupSortMode = "maxBuy";
@@ -2994,7 +3779,7 @@ $("groupCloseoutBtn").addEventListener("click", async function() {
   if (currentGroupId == null) return;
   var g = await groupsGet(currentGroupId);
   var count = g && g.items ? g.items.length : 0;
-  var nextId = (currentGroupId % GROUP_COUNT) + 1;
+  var nextId = (currentGroupId % groupCount()) + 1;
   var nextG  = await groupsGet(nextId);
   var nextName = nextG ? nextG.name : ("Table " + nextId);
   var msg = count > 0
@@ -3285,7 +4070,13 @@ $("compsModalCloseBtn").addEventListener("click", closeCompsModal);
 
 loadHintState();
 showView("main");
-updateSaveToGroupLabel();
+
+// Refresh the active-profile cache before anything reads it. Then the rest of
+// the init sequence reflects the correct group count and labels.
+refreshActiveProfileCache().then(function() {
+  updateSaveToGroupLabel();
+});
+
 updateAgentButtonVisibility();
 $("sendToAgentBtn").addEventListener("click", sendToAgent);
 
