@@ -4310,7 +4310,15 @@ function buildQueryFromIdentify(d) {
 async function submitCardToAgent(cardId) {
   var card = await cardsGet(cardId);
   if (!card) return;
-  if (!isAgentConfigured()) return;
+  if (!isAgentConfigured()) {
+    // Mark the card so the renderer surfaces a clear error + retry path
+    // instead of silently doing nothing.
+    card.agentError = "Agent not configured. Open ⚙ and set the Agent URL + key.";
+    card.status = "agent_failed";
+    await cardsPut(card);
+    await renderStreamCards();
+    return;
+  }
   var title = (card.query || "").trim() || buildQueryFromIdentify(card.identifyResult) || "Unknown item";
   var description = card.hint || "";
   var images = (card.photos || []).map(function(p) { return (p.dataUrl || "").replace(/^data:[^,]+,/, ""); }).filter(Boolean);
@@ -4523,43 +4531,78 @@ function buildStreamCardEl(card, activeGroupName) {
 }
 
 function renderStreamCardAgentRow(card) {
-  // If the card was never set up to use the agent, show a manual "Send to Agent" button.
-  if (!card.agentJobId && !card.autoAgent) {
-    if (!isAgentConfigured()) return null;
-    var row = document.createElement("div");
-    row.className = "agent-row none";
-    row.innerHTML = '<span class="agent-row-label">Agent</span>' +
-                    '<button type="button" class="agent-view-comps" data-stream-action="send-agent">Send now</button>';
-    row.querySelector('button').addEventListener("click", function() {
-      submitCardToAgent(card.id);
+  // Helper for the small inline retry/send/etc button.
+  function makeActionButton(label, onClick) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "agent-view-comps";
+    b.style.marginLeft = "6px";
+    b.textContent = label;
+    b.addEventListener("click", function(e) {
+      e.stopPropagation();
+      onClick();
     });
+    return b;
+  }
+  function makeRow(rowClass, labelHtml, valueHtml) {
+    var row = document.createElement("div");
+    row.className = "agent-row " + rowClass;
+    row.innerHTML = '<span class="agent-row-label">Agent</span>' +
+                    (labelHtml || '') + (valueHtml || '');
     return row;
   }
-  if (!card.agentJobId) return null;
-  // Wrap card so renderAgentRowHtml's existing logic works.
-  var fauxItem = {
-    agentJobId:        card.agentJobId,
-    agentStatus:       card.agentStatus,
-    agentResult:       card.agentResult,
-    agentError:        card.agentError,
-    agentSelectedPrice: null
-  };
-  var html = renderAgentRowHtml(fauxItem);
-  if (!html) return null;
-  var wrap = document.createElement("div");
-  wrap.innerHTML = html;
-  // Hook up the "view N" button.
-  var viewBtns = wrap.querySelectorAll('[data-agent-action="view-comps"]');
-  viewBtns.forEach(function(btn) {
-    btn.addEventListener("click", async function(e) {
-      e.stopPropagation();
-      var fresh = await cardsGet(card.id);
-      if (!fresh) return;
-      // Pass a faux-item that openCompsModal can consume.
-      openCompsModal({ agentResult: fresh.agentResult });
+
+  // Case A: agent job submitted — defer to the same renderer used everywhere.
+  if (card.agentJobId) {
+    var fauxItem = {
+      agentJobId:         card.agentJobId,
+      agentStatus:        card.agentStatus,
+      agentResult:        card.agentResult,
+      agentError:         card.agentError,
+      agentSelectedPrice: null
+    };
+    var html = renderAgentRowHtml(fauxItem);
+    if (!html) return null;
+    var wrap = document.createElement("div");
+    wrap.innerHTML = html;
+    var viewBtns = wrap.querySelectorAll('[data-agent-action="view-comps"]');
+    viewBtns.forEach(function(btn) {
+      btn.addEventListener("click", async function(e) {
+        e.stopPropagation();
+        var fresh = await cardsGet(card.id);
+        if (!fresh) return;
+        openCompsModal({ agentResult: fresh.agentResult });
+      });
     });
-  });
-  return wrap.firstChild;
+    return wrap.firstChild;
+  }
+
+  // Case B: submission failed (no jobId yet, agentError set).
+  if (card.status === "agent_failed" || card.agentError) {
+    var row = makeRow("error", '', '<span>' + escapeHtml(card.agentError || "Send failed") + '</span>');
+    row.appendChild(makeActionButton("Retry", function() { submitCardToAgent(card.id); }));
+    return row;
+  }
+
+  // Case C: agent isn't configured at all — quietly omit the row.
+  if (!isAgentConfigured()) return null;
+
+  // Case D: auto-agent ON, jobId not assigned yet. This covers (a) the brief
+  // window between identify-complete and submission-success, (b) submission
+  // genuinely in flight, and (c) submission silently failed without setting
+  // agentError. In every case, give the user a visible status and a retry.
+  if (card.autoAgent) {
+    var row = makeRow("running",
+      '<span><span class="agent-mini-spin"></span>submitting&hellip;</span>',
+      '');
+    row.appendChild(makeActionButton("Retry", function() { submitCardToAgent(card.id); }));
+    return row;
+  }
+
+  // Case E: auto-agent OFF, prompt user to send manually.
+  var row = makeRow("none", '', '');
+  row.appendChild(makeActionButton("Send now", function() { submitCardToAgent(card.id); }));
+  return row;
 }
 
 /* --- save / dismiss --- */
