@@ -751,6 +751,125 @@
   }
   .item-edit-foot button { flex: 1; margin: 0; }
 
+  /* Streamline mode */
+  .streamline-input {
+    background: #1a1a1a; border: 1px solid #2a2a2a;
+    border-radius: 10px; padding: 12px;
+    margin-bottom: 12px;
+  }
+  .streamline-input textarea { min-height: 48px; }
+  .streamline-cards { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+  .stream-card {
+    background: #1f1f1f; border: 1px solid #333;
+    border-radius: 10px; padding: 10px 12px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .stream-card.identifying { border-color: #2a4570; background: #182238; }
+  .stream-card.failed      { border-color: #5a2f2f; background: #2a1f1f; }
+  .stream-card-head {
+    display: flex; gap: 10px; align-items: flex-start;
+  }
+  .stream-thumb {
+    width: 64px; height: 64px; border-radius: 6px;
+    background: #0f0f0f; object-fit: cover; flex-shrink: 0;
+    cursor: zoom-in;
+  }
+  .stream-title-block { flex: 1; min-width: 0; }
+  .stream-card-title {
+    font-size: 0.95em; color: #e8e8e8; font-weight: 600;
+    word-break: break-word;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .stream-card-sub {
+    font-size: 0.78em; color: #888; margin-top: 2px;
+  }
+  .stream-card-x {
+    background: #2a2a2a; border: 1px solid #444; color: #aaa;
+    width: 28px; height: 28px; padding: 0; margin: 0;
+    border-radius: 14px; font-size: 1.1em; line-height: 1;
+    flex-shrink: 0;
+  }
+  .stream-card-x:active { background: #3a1f1f; color: #ff8888; }
+  .stream-est-row {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px;
+  }
+  .stream-est-cell {
+    background: #0f0f0f; border: 1px solid #2a2a2a;
+    border-radius: 6px; padding: 6px;
+    display: flex; flex-direction: column; align-items: center;
+  }
+  .stream-est-cell .est-label {
+    font-size: 0.65em; color: #888; text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .stream-est-cell input {
+    background: transparent; border: none; outline: none;
+    color: #e8e8e8; text-align: center;
+    width: 100%; padding: 0; margin: 0;
+    font-size: 1em; font-weight: 600;
+    font-family: inherit;
+  }
+  .stream-est-cell input:focus { background: #1a1a1a; border-radius: 4px; }
+  .stream-derived-row {
+    display: flex; gap: 10px; justify-content: space-around;
+    font-size: 0.85em;
+    background: #1a2a1a; border: 1px solid #2a4a2a;
+    border-radius: 6px; padding: 6px 10px;
+  }
+  .stream-derived-cell { color: #cfe8cf; }
+  .stream-derived-cell .label {
+    color: #888; font-size: 0.78em;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    margin-right: 4px;
+  }
+  .stream-derived-cell .val { font-weight: 600; }
+  .stream-derived-cell .val.negative { color: #d89f9f; }
+  .stream-loading-row {
+    display: flex; align-items: center; gap: 8px;
+    color: #aac8ff; font-size: 0.9em;
+    padding: 8px 0;
+  }
+  .stream-action-row {
+    display: flex; gap: 8px; align-items: center;
+  }
+  .stream-save-btn {
+    flex: 1; padding: 10px 14px; margin: 0;
+    background: #3a2a5a; border: 1px solid #5a3f8a; color: #e8d8ff;
+    font-weight: 600; border-radius: 8px;
+  }
+  .stream-save-btn:active { background: #4a3a6a; }
+  .stream-save-link {
+    width: auto; padding: 4px 8px; margin: 0;
+    background: none; border: none;
+    color: #888; text-decoration: underline;
+    font-size: 0.82em; font-family: inherit;
+  }
+  .stream-save-link:active { color: #ccc; }
+  .stream-save-link-row {
+    display: flex; justify-content: center; margin-top: -4px;
+  }
+
+  /* Toast: small confirmation bubble at the bottom of the screen */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1f3a1f;
+    border: 1px solid #305030;
+    color: #cfe8cf;
+    padding: 10px 18px;
+    border-radius: 24px;
+    z-index: 3000;
+    font-size: 0.95em;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    pointer-events: none;
+    animation: toast-in 0.2s ease;
+  }
+  @keyframes toast-in { from { opacity: 0; transform: translate(-50%, 10px); } to { opacity: 1; transform: translate(-50%, 0); } }
+
   /* Settings: ROI matrix */
   .settings-subhead {
     font-size: 0.8em; color: #888; text-transform: uppercase; letter-spacing: 0.06em;
@@ -767,6 +886,7 @@
 <header>
   <h1 id="pageTitle">Item ID</h1>
   <div class="nav">
+    <button class="icon-btn" id="streamlineBtn" title="Streamline mode" aria-label="Streamline mode">&#9889;</button>
     <button class="icon-btn" id="groupsBtn"   title="Groups"   aria-label="Groups">&#128193;</button>
     <button class="icon-btn" id="historyBtn"  title="History"  aria-label="History">&#9776;</button>
     <button class="icon-btn" id="settingsBtn" title="Settings" aria-label="Settings">&#9881;</button>
@@ -1078,6 +1198,46 @@
     <button class="danger" id="deleteProfileBtn">Delete profile</button>
   </div>
 </div>
+
+<div id="view-streamline" class="hidden">
+  <div class="streamline-input">
+    <div class="row">
+      <label class="btn" for="streamCameraInput">&#128247; Add Photo</label>
+      <label class="btn" for="streamLibraryInput">&#128444; Choose Photos</label>
+    </div>
+    <input type="file" id="streamCameraInput" accept="image/*" capture="environment">
+    <input type="file" id="streamLibraryInput" accept="image/*" multiple>
+    <div id="streamPhotoGridSection" class="hidden">
+      <div class="photo-count" id="streamPhotoCount"></div>
+      <div id="streamPhotoGrid" class="photos"></div>
+    </div>
+    <div class="hint-label-row" style="margin-top:8px;">
+      <label for="streamHintText" style="margin:0;">Hint (optional)</label>
+    </div>
+    <textarea id="streamHintText" placeholder="e.g., 'vintage Japanese porcelain'" spellcheck="false"></textarea>
+    <div class="check-row" style="margin-top:0;">
+      <input type="checkbox" id="streamAutoAgent">
+      <label for="streamAutoAgent">Auto-send to Agent after identify</label>
+    </div>
+    <button class="primary" id="streamIdentifyBtn" disabled>Identify Item</button>
+    <div class="footnote" style="margin-top:-2px;">Sends to background. Card appears below; tap Save when you're ready, or × to dismiss.</div>
+  </div>
+
+  <div class="streamline-cards" id="streamCardsList"></div>
+  <div id="streamEmpty" class="footnote" style="text-align:center; padding: 20px 16px;">
+    No cards yet. Add photos and tap Identify to start.
+  </div>
+
+  <!-- Tiny picker for "save to different group" -->
+  <div id="streamSaveGroupPicker" class="hidden" style="margin-top:8px;">
+    <div class="picker-title">Tap a group to save:</div>
+    <div id="streamSaveGroupPickerList"></div>
+    <button id="streamSaveGroupPickerCancel" style="margin-top:4px;">Cancel</button>
+  </div>
+</div>
+
+<!-- Toast for "Saved to <Group>" confirmation. -->
+<div id="toast" class="toast hidden"></div>
 
 <!-- Photo lightbox — tap any saved-item thumbnail to view it full-size. -->
 <div id="photoLightbox" class="photo-lightbox hidden">
@@ -2055,14 +2215,14 @@ function isAgentTerminal(status) {
 }
 
 async function pollAgentJobs() {
-  // Collect all in-flight jobs from History + Groups, keyed by jobId.
-  var byJob = {};   // jobId -> { history: [entry], groups: [{groupId, savedAt}] }
+  // Collect all in-flight jobs from History + Groups + Streamline cards, keyed by jobId.
+  var byJob = {};   // jobId -> { history: [entry], groups: [{groupId, savedAt}], cards: [cardId] }
 
   var historyAll;
   try { historyAll = await dbGetAll(); } catch (e) { historyAll = []; }
   historyAll.forEach(function(entry) {
     if (entry && entry.agentJobId && !isAgentTerminal(entry.agentStatus || "queued")) {
-      if (!byJob[entry.agentJobId]) byJob[entry.agentJobId] = { history: [], groups: [] };
+      if (!byJob[entry.agentJobId]) byJob[entry.agentJobId] = { history: [], groups: [], cards: [] };
       byJob[entry.agentJobId].history.push(entry);
     }
   });
@@ -2072,10 +2232,19 @@ async function pollAgentJobs() {
   groupsAll.forEach(function(g) {
     (g.items || []).forEach(function(it) {
       if (it && it.agentJobId && !isAgentTerminal(it.agentStatus || "queued")) {
-        if (!byJob[it.agentJobId]) byJob[it.agentJobId] = { history: [], groups: [] };
+        if (!byJob[it.agentJobId]) byJob[it.agentJobId] = { history: [], groups: [], cards: [] };
         byJob[it.agentJobId].groups.push({ groupId: g.id, savedAt: it.savedAt });
       }
     });
+  });
+
+  var cardsAll;
+  try { cardsAll = await cardsGetAll(); } catch (e) { cardsAll = []; }
+  cardsAll.forEach(function(card) {
+    if (card && card.agentJobId && !isAgentTerminal(card.agentStatus || "queued")) {
+      if (!byJob[card.agentJobId]) byJob[card.agentJobId] = { history: [], groups: [], cards: [] };
+      byJob[card.agentJobId].cards.push(card.id);
+    }
   });
 
   var jobIds = Object.keys(byJob);
@@ -2117,6 +2286,19 @@ async function pollAgentJobs() {
       }
       for (var gid in groupsToWrite) {
         try { await groupsPut(groupsToWrite[gid]); anyUpdated = true; } catch (e) {}
+      }
+      // Apply to streamline cards.
+      for (var k3 = 0; k3 < refs.cards.length; k3++) {
+        var cardId = refs.cards[k3];
+        var card = await cardsGet(cardId);
+        if (!card) continue;
+        applyAgentUpdates(card, updates);
+        // Update card status to mirror agent status for the head color.
+        if (card.agentStatus === "complete") card.status = "agent_complete";
+        else if (card.agentStatus === "failed")    card.status = "agent_failed";
+        else if (card.agentStatus === "cancelled") card.status = "agent_failed";
+        else if (card.agentStatus === "running")   card.status = "agent_running";
+        try { await cardsPut(card); anyUpdated = true; } catch (e) {}
       }
       // Suppress unused-var warning
       if (status) { /* ack */ }
@@ -2206,6 +2388,11 @@ function refreshIfShowingSavedView() {
   if (histDetail && !histDetail.classList.contains("hidden") && currentHistoryId != null) {
     // Re-fetch + re-render the open entry.
     openHistDetail(currentHistoryId);
+  }
+  // Streamline view: re-render so agent statuses on cards update live.
+  var streamView = $("view-streamline");
+  if (streamView && !streamView.classList.contains("hidden")) {
+    renderStreamCards();
   }
 }
 
@@ -2579,10 +2766,11 @@ function showError(msg) {
 }
 
 var DB_NAME = "itemid";
-var DB_VERSION = 3;
+var DB_VERSION = 4;
 var STORE = "items";
 var GROUPS_STORE = "groups";
 var PROFILES_STORE = "profiles";
+var STREAMLINE_STORE = "streamlineCards";
 var DEFAULT_PROFILE_ID = 1;
 
 function openDb() {
@@ -2616,6 +2804,13 @@ function openDb() {
           createdAt: Date.now(),
           builtin: true
         });
+      }
+      // v4: streamline cards store — persistent single-stream workflow for
+      // fast triage during a sale. Each card holds its own photos+result, lives
+      // until the user explicitly saves or dismisses it.
+      if (!db.objectStoreNames.contains(STREAMLINE_STORE)) {
+        var sc = db.createObjectStore(STREAMLINE_STORE, { keyPath: "id", autoIncrement: true });
+        sc.createIndex("createdAt", "createdAt", { unique: false });
       }
     };
     req.onsuccess = function() { resolve(req.result); };
@@ -2688,6 +2883,59 @@ async function getActiveProfile() {
 function setActiveProfileId(id) {
   if (!isFinite(parseInt(id, 10))) return;
   localStorage.setItem(LS_ACTIVE_PROFILE, String(id));
+}
+
+/* ============================================================
+ * Streamline cards CRUD
+ * ============================================================ */
+
+function cardsStore(mode) {
+  return openDb().then(function(db) { return db.transaction(STREAMLINE_STORE, mode).objectStore(STREAMLINE_STORE); });
+}
+async function cardsGetAll() {
+  var store = await cardsStore("readonly");
+  return new Promise(function(res, rej) {
+    var r = store.getAll();
+    r.onsuccess = function() {
+      var arr = (r.result || []).slice();
+      // Newest first.
+      arr.sort(function(a, b) { return (b.createdAt || 0) - (a.createdAt || 0); });
+      res(arr);
+    };
+    r.onerror = function() { rej(r.error); };
+  });
+}
+async function cardsGet(id) {
+  var store = await cardsStore("readonly");
+  return new Promise(function(res, rej) {
+    var r = store.get(id);
+    r.onsuccess = function() { res(r.result); };
+    r.onerror   = function() { rej(r.error); };
+  });
+}
+async function cardsAdd(doc) {
+  var store = await cardsStore("readwrite");
+  return new Promise(function(res, rej) {
+    var r = store.add(doc);
+    r.onsuccess = function() { res(r.result); };
+    r.onerror   = function() { rej(r.error); };
+  });
+}
+async function cardsPut(doc) {
+  var store = await cardsStore("readwrite");
+  return new Promise(function(res, rej) {
+    var r = store.put(doc);
+    r.onsuccess = function() { res(r.result); };
+    r.onerror   = function() { rej(r.error); };
+  });
+}
+async function cardsDelete(id) {
+  var store = await cardsStore("readwrite");
+  return new Promise(function(res, rej) {
+    var r = store.delete(id);
+    r.onsuccess = function() { res(); };
+    r.onerror   = function() { rej(r.error); };
+  });
 }
 async function groupsGetAll() {
   var store = await groupsStore("readonly");
@@ -2997,6 +3245,7 @@ function showView(name) {
   hide($("view-group-detail"));
   hide($("view-profiles"));
   hide($("view-profile-edit"));
+  hide($("view-streamline"));
   hide($("settings"));
   if (name === "main") {
     show($("view-main"));
@@ -3024,6 +3273,10 @@ function showView(name) {
   } else if (name === "profile-edit") {
     show($("view-profile-edit"));
     $("subtitle").textContent = "Edit profile";
+  } else if (name === "streamline") {
+    show($("view-streamline"));
+    $("subtitle").textContent = "Streamline — fast triage";
+    renderStreamline();
   }
   window.scrollTo({ top: 0, behavior: "auto" });
 }
@@ -3036,6 +3289,11 @@ $("groupDetailBackBtn").addEventListener("click", function() { showView("groups"
 $("openProfilesBtn").addEventListener("click", function() { showView("profiles"); });
 $("profilesBackBtn").addEventListener("click", function() { showView("groups"); });
 $("profileEditBackBtn").addEventListener("click", function() { showView("profiles"); });
+$("streamlineBtn").addEventListener("click", function() {
+  // Toggle: when already in Streamline, go back to main; otherwise enter.
+  if (!$("view-streamline").classList.contains("hidden")) showView("main");
+  else showView("streamline");
+});
 
 async function renderGroupsList() {
   var list = $("groupsList");
@@ -3855,6 +4113,539 @@ async function saveItemEdit() {
   closeItemEditModal();
   renderGroupDetail(ctx.groupId);
 }
+
+/* ============================================================
+ * Streamline mode: persistent single-stream workflow.
+ *
+ * The Streamline view shows an input strip at the top (photos, hint,
+ * Identify button, auto-agent checkbox) and a stack of cards below.
+ * Each card walks through: identifying → identified → agent_pending →
+ * agent_running → agent_complete (or *_failed). The user can save the
+ * card to a group at any point, or dismiss it.
+ *
+ * Cards persist in IndexedDB so reloads / phone sleeps don't lose
+ * in-flight work. The agent poller scans cards alongside groups + history.
+ * ============================================================ */
+
+var LS_STREAM_AUTO_AGENT = "itemid.streamAutoAgent";
+var streamPhotos = [];           // current input strip photos (not yet on a card)
+var TOAST_DURATION_MS = 1600;
+var toastTimer = null;
+
+function showToast(text) {
+  var el = $("toast");
+  if (!el) return;
+  el.textContent = text;
+  el.classList.remove("hidden");
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(function() { el.classList.add("hidden"); toastTimer = null; }, TOAST_DURATION_MS);
+}
+
+function streamGetAutoAgent() {
+  // Defaults to true.
+  var raw = localStorage.getItem(LS_STREAM_AUTO_AGENT);
+  if (raw == null) return true;
+  return raw === "1";
+}
+function streamSetAutoAgent(v) {
+  localStorage.setItem(LS_STREAM_AUTO_AGENT, v ? "1" : "0");
+}
+
+async function renderStreamline() {
+  // Sync UI state from prefs.
+  $("streamAutoAgent").checked = streamGetAutoAgent();
+  renderStreamPhotos();
+  updateStreamIdentifyButton();
+  await renderStreamCards();
+}
+
+/* --- input strip: photo management --- */
+
+function renderStreamPhotos() {
+  var grid = $("streamPhotoGrid");
+  grid.innerHTML = "";
+  var section = $("streamPhotoGridSection");
+  if (streamPhotos.length === 0) { hide(section); return; }
+  show(section);
+  $("streamPhotoCount").textContent = streamPhotos.length + " photo" + (streamPhotos.length === 1 ? "" : "s") + " (max 10)";
+  streamPhotos.forEach(function(p, idx) {
+    var cell = document.createElement("div");
+    cell.className = "photo";
+    var img = document.createElement("img");
+    img.src = p.dataUrl; img.alt = "";
+    cell.appendChild(img);
+    var x = document.createElement("button");
+    x.className = "x-btn";
+    x.innerHTML = "&times;";
+    x.setAttribute("aria-label", "Remove photo");
+    x.addEventListener("click", function(e) {
+      e.stopPropagation();
+      streamPhotos.splice(idx, 1);
+      renderStreamPhotos();
+      updateStreamIdentifyButton();
+    });
+    cell.appendChild(x);
+    grid.appendChild(cell);
+  });
+}
+
+function updateStreamIdentifyButton() {
+  $("streamIdentifyBtn").disabled = streamPhotos.length === 0;
+}
+
+async function streamHandleFiles(fileList) {
+  var files = Array.from(fileList);
+  for (var i = 0; i < files.length; i++) {
+    if (streamPhotos.length >= 10) { showError("Max 10 photos per item."); break; }
+    try {
+      var p = await downscale(files[i], 1280);
+      // No .original — cards don't support Save-to-Phone; saves go to groups.
+      streamPhotos.push(p);
+    } catch (e) { showError("Couldn't read an image: " + e.message); }
+  }
+  $("streamCameraInput").value = "";
+  $("streamLibraryInput").value = "";
+  renderStreamPhotos();
+  updateStreamIdentifyButton();
+}
+
+$("streamCameraInput").addEventListener("change", function(e) { streamHandleFiles(e.target.files); });
+$("streamLibraryInput").addEventListener("change", function(e) { streamHandleFiles(e.target.files); });
+$("streamAutoAgent").addEventListener("change", function() { streamSetAutoAgent($("streamAutoAgent").checked); });
+
+/* --- create card on Identify --- */
+
+$("streamIdentifyBtn").addEventListener("click", async function() {
+  if (streamPhotos.length === 0) return;
+  var key = localStorage.getItem(LS_KEY);
+  if (!key) {
+    showError("Set your Anthropic API key in ⚙ first.");
+    show($("settings"));
+    return;
+  }
+  var hint = $("streamHintText").value;
+  var model = localStorage.getItem(LS_MODEL) || "claude-sonnet-4-6";
+  var photoSnapshot = streamPhotos.map(function(p) {
+    // Store JUST what we need to re-render and re-submit: dataUrl + base64 + mediaType.
+    return { dataUrl: p.dataUrl, base64: p.base64, mediaType: p.mediaType };
+  });
+  var thumb = "";
+  try { thumb = await makeThumbnail(photoSnapshot[0].dataUrl, 160); } catch (e) {}
+  var card = {
+    status:           "identifying",
+    createdAt:        Date.now(),
+    photos:           photoSnapshot,
+    hint:             hint,
+    model:            model,
+    identifyResult:   null,
+    query:            "",
+    value:            null,
+    str:              null,
+    cost:             null,
+    taxBpPct:         getStickyTaxBpPct(),
+    agentJobId:       null,
+    agentSubmittedAt: null,
+    agentStatus:      null,
+    agentResult:      null,
+    agentError:       null,
+    thumb:            thumb,
+    autoAgent:        streamGetAutoAgent()
+  };
+  var id = await cardsAdd(card);
+  card.id = id;
+  // Clear input strip.
+  streamPhotos = [];
+  $("streamHintText").value = "";
+  renderStreamPhotos();
+  updateStreamIdentifyButton();
+  await renderStreamCards();
+  // Run the identify in the background.
+  runCardIdentify(id).catch(function(e) {
+    // Silent; the card itself surfaces the error state.
+  });
+});
+
+async function runCardIdentify(cardId) {
+  var card = await cardsGet(cardId);
+  if (!card) return;
+  var apiKey = localStorage.getItem(LS_KEY);
+  try {
+    var data = await callClaude(apiKey, card.model, card.photos, card.hint);
+    var fresh = await cardsGet(cardId);
+    if (!fresh) return;  // user dismissed it mid-flight
+    fresh.identifyResult = data;
+    // Seed the editable fields from the AI's output.
+    fresh.value    = numOrNull(data.estimated_value_usd);
+    fresh.str      = numOrNull(data.sell_through_pct);
+    fresh.query    = buildQueryFromIdentify(data);
+    fresh.status   = "identified";
+    await cardsPut(fresh);
+    await renderStreamCards();
+    // Kick off agent if opted in.
+    if (fresh.autoAgent && isAgentConfigured()) {
+      submitCardToAgent(cardId).catch(function() {});
+    }
+  } catch (e) {
+    var failed = await cardsGet(cardId);
+    if (!failed) return;
+    failed.status = "identify_failed";
+    failed.identifyResult = { _error: (e && e.message) || String(e) };
+    await cardsPut(failed);
+    await renderStreamCards();
+  }
+}
+
+function buildQueryFromIdentify(d) {
+  if (!d) return "";
+  var parts = [];
+  ["model", "brand", "item"].forEach(function(k) {
+    var v = String(d[k] || "").trim();
+    if (v) parts.push(v);
+  });
+  return parts.join(" ");
+}
+
+/* --- agent submit per card --- */
+
+async function submitCardToAgent(cardId) {
+  var card = await cardsGet(cardId);
+  if (!card) return;
+  if (!isAgentConfigured()) return;
+  var title = (card.query || "").trim() || buildQueryFromIdentify(card.identifyResult) || "Unknown item";
+  var description = card.hint || "";
+  var images = (card.photos || []).map(function(p) { return (p.dataUrl || "").replace(/^data:[^,]+,/, ""); }).filter(Boolean);
+  var body = {
+    title:           title,
+    description:     description || null,
+    images:          images,
+    condition:       "used",
+    max_tier:        5,
+    client_id:       "item_id_streamline",
+    idempotency_key: "itemid-stream-" + cardId + "-" + Date.now()
+  };
+  try {
+    var url = agentBaseUrl() + "/api/v1/research";
+    var res = await fetch(url, {
+      method:  "POST",
+      headers: { "Content-Type": "application/json", "X-API-Key": agentApiKey() },
+      body:    JSON.stringify(body)
+    });
+    if (!res.ok) {
+      var errText = await res.text();
+      throw new Error("Agent API " + res.status + ": " + errText.slice(0, 300));
+    }
+    var data = await res.json();
+    if (!data || !data.job_id) throw new Error("Agent API returned no job_id");
+    var fresh = await cardsGet(cardId);
+    if (!fresh) return;
+    fresh.agentJobId       = data.job_id;
+    fresh.agentSubmittedAt = Date.now();
+    fresh.agentStatus      = "queued";
+    fresh.status           = "agent_pending";
+    await cardsPut(fresh);
+    await renderStreamCards();
+  } catch (e) {
+    var failed = await cardsGet(cardId);
+    if (!failed) return;
+    failed.agentError = (e && e.message) || String(e);
+    failed.status     = "agent_failed";
+    await cardsPut(failed);
+    await renderStreamCards();
+  }
+}
+
+/* --- render cards --- */
+
+async function renderStreamCards() {
+  var list = $("streamCardsList");
+  list.innerHTML = "";
+  var cards = await cardsGetAll();
+  if (cards.length === 0) {
+    show($("streamEmpty"));
+    return;
+  }
+  hide($("streamEmpty"));
+  // Active group name for the Save button.
+  var activeGroup;
+  try { activeGroup = await groupsGet(getActiveGroupId()); } catch (e) {}
+  var activeGroupName = (activeGroup && activeGroup.name) || ("Table " + getActiveGroupId());
+  cards.forEach(function(card) {
+    list.appendChild(buildStreamCardEl(card, activeGroupName));
+  });
+}
+
+function buildStreamCardEl(card, activeGroupName) {
+  var el = document.createElement("div");
+  el.className = "stream-card " + (card.status || "");
+  var idn = card.identifyResult || {};
+  var title;
+  if (card.status === "identifying") title = "Identifying…";
+  else if (card.status === "identify_failed") title = "Identify failed";
+  else {
+    var parts = [];
+    ["model", "brand", "item", "adjectives"].forEach(function(k) {
+      var v = String(idn[k] || "").trim();
+      if (v) parts.push(v);
+    });
+    title = parts.join(" ").trim() || "Item";
+  }
+  var subParts = [];
+  if (idn.confidence) subParts.push("conf: " + idn.confidence);
+  if (idn.notes)      subParts.push(idn.notes);
+  var subText = subParts.join(" · ");
+
+  var head = document.createElement("div");
+  head.className = "stream-card-head";
+  // Thumbnail
+  var thumb;
+  if (card.thumb || (card.photos && card.photos[0] && card.photos[0].dataUrl)) {
+    thumb = document.createElement("img");
+    thumb.className = "stream-thumb";
+    thumb.src = card.thumb || card.photos[0].dataUrl;
+    thumb.alt = "";
+    thumb.addEventListener("click", function(e) {
+      e.stopPropagation();
+      openPhotoLightbox(card.photos && card.photos[0] && card.photos[0].dataUrl || card.thumb);
+    });
+  } else {
+    thumb = document.createElement("div");
+    thumb.className = "stream-thumb";
+  }
+  head.appendChild(thumb);
+  var tb = document.createElement("div");
+  tb.className = "stream-title-block";
+  tb.innerHTML =
+    '<div class="stream-card-title">' + escapeHtml(title) + '</div>' +
+    (subText ? '<div class="stream-card-sub">' + escapeHtml(subText) + '</div>' : '');
+  head.appendChild(tb);
+  // Dismiss button
+  var x = document.createElement("button");
+  x.type = "button";
+  x.className = "stream-card-x";
+  x.innerHTML = "&times;";
+  x.setAttribute("aria-label", "Dismiss");
+  x.addEventListener("click", function() { dismissCard(card); });
+  head.appendChild(x);
+  el.appendChild(head);
+
+  // While Claude is still identifying, just show a spinner row.
+  if (card.status === "identifying") {
+    var lr = document.createElement("div");
+    lr.className = "stream-loading-row";
+    lr.innerHTML = '<span class="spinner"></span>Identifying…';
+    el.appendChild(lr);
+    return el;
+  }
+
+  if (card.status === "identify_failed") {
+    var er = document.createElement("div");
+    er.className = "stream-loading-row";
+    er.style.color = "#d89f9f";
+    er.textContent = "× " + ((card.identifyResult && card.identifyResult._error) || "Identify failed");
+    el.appendChild(er);
+    return el;
+  }
+
+  // Editable Sale / STR / Cost row.
+  var est = document.createElement("div");
+  est.className = "stream-est-row";
+  est.innerHTML =
+    '<div class="stream-est-cell"><div class="est-label">Sale $</div><input type="number" step="0.01" min="0" inputmode="decimal" data-field="value"></div>' +
+    '<div class="stream-est-cell"><div class="est-label">STR %</div><input type="number" step="1" min="0" max="100" inputmode="numeric" data-field="str"></div>' +
+    '<div class="stream-est-cell"><div class="est-label">Cost $</div><input type="number" step="0.01" min="0" inputmode="decimal" data-field="cost"></div>';
+  est.querySelector('[data-field="value"]').value = card.value != null ? card.value : "";
+  est.querySelector('[data-field="str"]').value   = card.str   != null ? card.str   : "";
+  est.querySelector('[data-field="cost"]').value  = card.cost  != null ? card.cost  : "";
+
+  // Live recompute helpers.
+  function readInputs() {
+    function parseOrNull(s) {
+      if (s === "" || s == null) return null;
+      var n = Number(s); return isFinite(n) ? n : null;
+    }
+    return {
+      value: parseOrNull(est.querySelector('[data-field="value"]').value),
+      str:   parseOrNull(est.querySelector('[data-field="str"]').value),
+      cost:  parseOrNull(est.querySelector('[data-field="cost"]').value)
+    };
+  }
+  var derived = document.createElement("div");
+  derived.className = "stream-derived-row";
+  function renderDerived() {
+    var vals = readInputs();
+    var mb = computeMaxBuy(vals.value, vals.str);
+    var pr = computeProfit(vals.value, vals.cost, card.taxBpPct);
+    var mbText = mb.maxBuy != null ? "$" + mb.maxBuy.toFixed(2) : "—";
+    var prText = pr.profit != null ? formatDollar(pr.profit) : "—";
+    var prCls  = (pr.profit != null && pr.profit < 0) ? "val negative" : "val";
+    derived.innerHTML =
+      '<div class="stream-derived-cell"><span class="label">Max Buy</span><span class="val">' + mbText + '</span></div>' +
+      '<div class="stream-derived-cell"><span class="label">Profit</span><span class="' + prCls + '">' + prText + '</span></div>';
+  }
+  renderDerived();
+  // Persist on blur or value change so a phone-sleep won't lose edits.
+  est.querySelectorAll("input").forEach(function(inp) {
+    inp.addEventListener("input", renderDerived);
+    inp.addEventListener("change", async function() {
+      var fresh = await cardsGet(card.id);
+      if (!fresh) return;
+      var vals = readInputs();
+      fresh.value = vals.value;
+      fresh.str   = vals.str;
+      fresh.cost  = vals.cost;
+      await cardsPut(fresh);
+    });
+  });
+  el.appendChild(est);
+  el.appendChild(derived);
+
+  // Agent row.
+  var agentEl = renderStreamCardAgentRow(card);
+  if (agentEl) el.appendChild(agentEl);
+
+  // Save / dismiss action row.
+  var actions = document.createElement("div");
+  actions.className = "stream-action-row";
+  var saveBtn = document.createElement("button");
+  saveBtn.className = "stream-save-btn";
+  saveBtn.innerHTML = "&#128190; Save to " + escapeHtml(activeGroupName);
+  saveBtn.addEventListener("click", function() { saveCardToActiveGroup(card.id); });
+  actions.appendChild(saveBtn);
+  el.appendChild(actions);
+
+  var alt = document.createElement("div");
+  alt.className = "stream-save-link-row";
+  alt.innerHTML = '<button type="button" class="stream-save-link">Save to different group…</button>';
+  alt.querySelector("button").addEventListener("click", function() { openCardSaveGroupPicker(card.id); });
+  el.appendChild(alt);
+
+  return el;
+}
+
+function renderStreamCardAgentRow(card) {
+  // If the card was never set up to use the agent, show a manual "Send to Agent" button.
+  if (!card.agentJobId && !card.autoAgent) {
+    if (!isAgentConfigured()) return null;
+    var row = document.createElement("div");
+    row.className = "agent-row none";
+    row.innerHTML = '<span class="agent-row-label">Agent</span>' +
+                    '<button type="button" class="agent-view-comps" data-stream-action="send-agent">Send now</button>';
+    row.querySelector('button').addEventListener("click", function() {
+      submitCardToAgent(card.id);
+    });
+    return row;
+  }
+  if (!card.agentJobId) return null;
+  // Wrap card so renderAgentRowHtml's existing logic works.
+  var fauxItem = {
+    agentJobId:        card.agentJobId,
+    agentStatus:       card.agentStatus,
+    agentResult:       card.agentResult,
+    agentError:        card.agentError,
+    agentSelectedPrice: null
+  };
+  var html = renderAgentRowHtml(fauxItem);
+  if (!html) return null;
+  var wrap = document.createElement("div");
+  wrap.innerHTML = html;
+  // Hook up the "view N" button.
+  var viewBtns = wrap.querySelectorAll('[data-agent-action="view-comps"]');
+  viewBtns.forEach(function(btn) {
+    btn.addEventListener("click", async function(e) {
+      e.stopPropagation();
+      var fresh = await cardsGet(card.id);
+      if (!fresh) return;
+      // Pass a faux-item that openCompsModal can consume.
+      openCompsModal({ agentResult: fresh.agentResult });
+    });
+  });
+  return wrap.firstChild;
+}
+
+/* --- save / dismiss --- */
+
+async function dismissCard(card) {
+  if (card.status === "agent_pending" || card.status === "agent_running" || card.agentStatus === "queued" || card.agentStatus === "running") {
+    if (!confirm("Agent is still researching this item. Dismiss anyway?")) return;
+  }
+  await cardsDelete(card.id);
+  await renderStreamCards();
+}
+
+async function saveCardToActiveGroup(cardId) {
+  await saveCardToGroup(cardId, getActiveGroupId());
+}
+
+async function saveCardToGroup(cardId, groupId) {
+  var card = await cardsGet(cardId);
+  if (!card) return;
+  var snap = buildSnapshotFromCard(card);
+  await groupsAddItem(groupId, snap);
+  // Toast + dismiss.
+  var g;
+  try { g = await groupsGet(groupId); } catch (e) {}
+  var name = (g && g.name) || ("Table " + groupId);
+  await cardsDelete(cardId);
+  await renderStreamCards();
+  showToast("Saved to " + name);
+}
+
+function buildSnapshotFromCard(card) {
+  // Mirror buildGroupSnapshot's shape so all the group-detail rendering works.
+  var maxBuyText = "";
+  var profitText = "";
+  var maxBuyNum = null;
+  var profitNum = null;
+  var mb = computeMaxBuy(card.value, card.str);
+  var pr = computeProfit(card.value, card.cost, card.taxBpPct);
+  if (mb.maxBuy != null) { maxBuyText = "$" + mb.maxBuy.toFixed(2); maxBuyNum = mb.maxBuy; }
+  if (pr.profit != null) { profitText = formatDollar(pr.profit); profitNum = pr.profit; }
+  return {
+    savedAt:    Date.now(),
+    thumb:      card.thumb,
+    query:      card.query || "",
+    value:      card.value,
+    str:        card.str,
+    maxBuyText: maxBuyText,
+    maxBuyNum:  maxBuyNum,
+    cost:       card.cost,
+    taxBpPct:   card.taxBpPct,
+    taxBp:      (card.cost != null && card.taxBpPct != null) ? card.cost * (card.taxBpPct / 100) : null,
+    profitText: profitText,
+    profitNum:  profitNum,
+    agentJobId:        card.agentJobId,
+    agentSubmittedAt:  card.agentSubmittedAt,
+    agentStatus:       card.agentStatus,
+    agentResult:       card.agentResult,
+    agentError:        card.agentError,
+    agentSelectedPrice: null
+  };
+}
+
+/* Picker for "save to different group". */
+async function openCardSaveGroupPicker(cardId) {
+  var list = $("streamSaveGroupPickerList");
+  list.innerHTML = "";
+  var groups = await groupsGetAll();
+  var activeId = getActiveGroupId();
+  groups.forEach(function(g) {
+    var b = document.createElement("button");
+    b.className = "picker-group-btn" + (g.id === activeId ? " is-active" : "");
+    b.type = "button";
+    b.innerHTML =
+      '<span>' + escapeHtml(g.name) + (g.id === activeId ? ' <span class="group-active-badge">Active</span>' : '') + '</span>' +
+      '<span class="pg-count">' + (g.items ? g.items.length : 0) + ' items</span>';
+    b.addEventListener("click", async function() {
+      hide($("streamSaveGroupPicker"));
+      await saveCardToGroup(cardId, g.id);
+    });
+    list.appendChild(b);
+  });
+  show($("streamSaveGroupPicker"));
+}
+$("streamSaveGroupPickerCancel").addEventListener("click", function() {
+  hide($("streamSaveGroupPicker"));
+});
 
 function buildCompCard(c) {
   if (!c) return document.createDocumentFragment();
