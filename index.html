@@ -783,6 +783,36 @@
     margin-bottom: 12px;
   }
   .streamline-input textarea { min-height: 48px; }
+  .stream-auto-mode-row {
+    display: flex; align-items: center; gap: 8px;
+    margin: 6px 0 8px;
+    flex-wrap: wrap;
+  }
+  .stream-auto-mode-label {
+    color: #888; font-size: 0.82em;
+    text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .stream-auto-mode-toggle {
+    display: inline-flex; gap: 2px;
+    background: #0f0f0f; border: 1px solid #333;
+    border-radius: 8px; padding: 3px;
+  }
+  .stream-auto-mode-toggle button {
+    width: auto; padding: 5px 12px; margin: 0;
+    background: transparent; border: 1px solid transparent;
+    color: #aaa; font-size: 0.88em; border-radius: 5px;
+    font-family: inherit;
+  }
+  .stream-auto-mode-toggle button:active { background: #2a2a2a; }
+  .stream-auto-mode-toggle button[data-mode="off"].active {
+    background: #2a2a2a; border-color: #444; color: #ddd; font-weight: 600;
+  }
+  .stream-auto-mode-toggle button[data-mode="full"].active {
+    background: #2a3a5a; border-color: #4570a0; color: #d0e2ff; font-weight: 600;
+  }
+  .stream-auto-mode-toggle button[data-mode="quick"].active {
+    background: #5a4218; border-color: #8a6a28; color: #f5d186; font-weight: 600;
+  }
   .streamline-cards { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
   .stream-card {
     background: #1f1f1f; border: 1px solid #333;
@@ -1240,9 +1270,13 @@
       <label for="streamHintText" style="margin:0;">Hint (optional)</label>
     </div>
     <textarea id="streamHintText" placeholder="e.g., 'vintage Japanese porcelain'" spellcheck="false"></textarea>
-    <div class="check-row" style="margin-top:0;">
-      <input type="checkbox" id="streamAutoAgent">
-      <label for="streamAutoAgent">Auto-send to Agent after identify</label>
+    <div class="stream-auto-mode-row">
+      <span class="stream-auto-mode-label">After identify, auto-send:</span>
+      <div class="stream-auto-mode-toggle" id="streamAutoModeToggle">
+        <button type="button" data-mode="off">Off</button>
+        <button type="button" data-mode="full">Full</button>
+        <button type="button" data-mode="quick">Quick</button>
+      </div>
     </div>
     <button class="primary" id="streamIdentifyBtn" disabled>Identify Item</button>
     <div class="footnote" style="margin-top:-2px;">Sends to background. Card appears below; tap Save when you're ready, or × to dismiss.</div>
@@ -4163,7 +4197,8 @@ async function saveItemEdit() {
  * in-flight work. The agent poller scans cards alongside groups + history.
  * ============================================================ */
 
-var LS_STREAM_AUTO_AGENT = "itemid.streamAutoAgent";
+var LS_STREAM_AUTO_AGENT = "itemid.streamAutoAgent";  // legacy: "0"/"1"
+var LS_STREAM_AUTO_MODE  = "itemid.streamAutoMode";   // new: "off"/"full"/"quick"
 var streamPhotos = [];           // current input strip photos (not yet on a card)
 var TOAST_DURATION_MS = 1600;
 var toastTimer = null;
@@ -4177,22 +4212,37 @@ function showToast(text) {
   toastTimer = setTimeout(function() { el.classList.add("hidden"); toastTimer = null; }, TOAST_DURATION_MS);
 }
 
-function streamGetAutoAgent() {
-  // Defaults to true.
-  var raw = localStorage.getItem(LS_STREAM_AUTO_AGENT);
-  if (raw == null) return true;
-  return raw === "1";
+/* Three-way auto-mode: "off" | "full" | "quick". Migrates from the old
+ * boolean checkbox: true → "full", false → "off". When neither pref is set,
+ * default to "quick" since this view is aimed at auction-speed triage. */
+function streamGetAutoMode() {
+  var m = localStorage.getItem(LS_STREAM_AUTO_MODE);
+  if (m === "off" || m === "full" || m === "quick") return m;
+  var legacy = localStorage.getItem(LS_STREAM_AUTO_AGENT);
+  if (legacy === "1") return "full";
+  if (legacy === "0") return "off";
+  return "quick";
 }
-function streamSetAutoAgent(v) {
-  localStorage.setItem(LS_STREAM_AUTO_AGENT, v ? "1" : "0");
+function streamSetAutoMode(mode) {
+  if (mode !== "off" && mode !== "full" && mode !== "quick") return;
+  localStorage.setItem(LS_STREAM_AUTO_MODE, mode);
 }
 
 async function renderStreamline() {
   // Sync UI state from prefs.
-  $("streamAutoAgent").checked = streamGetAutoAgent();
+  updateStreamAutoModeUi();
   renderStreamPhotos();
   updateStreamIdentifyButton();
   await renderStreamCards();
+}
+
+function updateStreamAutoModeUi() {
+  var current = streamGetAutoMode();
+  var toggle = $("streamAutoModeToggle");
+  if (!toggle) return;
+  toggle.querySelectorAll("button[data-mode]").forEach(function(btn) {
+    btn.classList.toggle("active", btn.getAttribute("data-mode") === current);
+  });
 }
 
 /* --- input strip: photo management --- */
@@ -4210,6 +4260,17 @@ function renderStreamPhotos() {
     var img = document.createElement("img");
     img.src = p.dataUrl; img.alt = "";
     cell.appendChild(img);
+
+    var r = document.createElement("button");
+    r.className = "rot-btn";
+    r.innerHTML = "&#10227;";  // clockwise rotation arrow
+    r.setAttribute("aria-label", "Rotate photo 90 degrees clockwise");
+    r.addEventListener("click", function(e) {
+      e.stopPropagation();
+      rotateStreamPhotoCW(idx);
+    });
+    cell.appendChild(r);
+
     var x = document.createElement("button");
     x.className = "x-btn";
     x.innerHTML = "&times;";
@@ -4223,6 +4284,35 @@ function renderStreamPhotos() {
     cell.appendChild(x);
     grid.appendChild(cell);
   });
+}
+
+/* Rotate a Streamline input-strip photo 90° clockwise. Re-encodes the
+ * downscaled JPEG in place so Claude (and the agent) see the corrected
+ * orientation when the user taps Identify. */
+function rotateStreamPhotoCW(idx) {
+  if (idx < 0 || idx >= streamPhotos.length) return;
+  var p = streamPhotos[idx];
+  if (!p || !p.dataUrl) return;
+  var img = new Image();
+  img.onload = function() {
+    var canvas = document.createElement("canvas");
+    canvas.width  = img.height;
+    canvas.height = img.width;
+    var ctx = canvas.getContext("2d");
+    ctx.translate(canvas.width, 0);
+    ctx.rotate(Math.PI / 2);
+    ctx.drawImage(img, 0, 0);
+    var dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+    var base64 = dataUrl.split(",")[1];
+    streamPhotos[idx] = {
+      dataUrl:   dataUrl,
+      base64:    base64,
+      mediaType: "image/jpeg"
+    };
+    renderStreamPhotos();
+  };
+  img.onerror = function() { showError("Couldn't rotate that photo."); };
+  img.src = p.dataUrl;
 }
 
 function updateStreamIdentifyButton() {
@@ -4247,7 +4337,12 @@ async function streamHandleFiles(fileList) {
 
 $("streamCameraInput").addEventListener("change", function(e) { streamHandleFiles(e.target.files); });
 $("streamLibraryInput").addEventListener("change", function(e) { streamHandleFiles(e.target.files); });
-$("streamAutoAgent").addEventListener("change", function() { streamSetAutoAgent($("streamAutoAgent").checked); });
+$("streamAutoModeToggle").querySelectorAll("button[data-mode]").forEach(function(btn) {
+  btn.addEventListener("click", function() {
+    streamSetAutoMode(btn.getAttribute("data-mode"));
+    updateStreamAutoModeUi();
+  });
+});
 
 /* --- create card on Identify --- */
 
@@ -4285,7 +4380,9 @@ $("streamIdentifyBtn").addEventListener("click", async function() {
     agentResult:      null,
     agentError:       null,
     thumb:            thumb,
-    autoAgent:        streamGetAutoAgent()
+    // Snapshot the chosen auto-mode at submit time so the card's behavior is
+    // stable even if the user changes the toggle while research is in flight.
+    autoMode:         streamGetAutoMode()
   };
   var id = await cardsAdd(card);
   card.id = id;
@@ -4317,9 +4414,11 @@ async function runCardIdentify(cardId) {
     fresh.status   = "identified";
     await cardsPut(fresh);
     await renderStreamCards();
-    // Kick off agent if opted in.
-    if (fresh.autoAgent && isAgentConfigured()) {
-      submitCardToAgent(cardId).catch(function() {});
+    // Auto-fire whichever mode was chosen at submit time (snapshotted into
+    // card.autoMode). Legacy cards have card.autoAgent set instead.
+    var mode = fresh.autoMode || (fresh.autoAgent ? "full" : "off");
+    if (mode !== "off" && isAgentConfigured()) {
+      submitCardToAgent(cardId, {quickLookup: mode === "quick"}).catch(function() {});
     }
   } catch (e) {
     var failed = await cardsGet(cardId);
@@ -4640,21 +4739,27 @@ function renderStreamCardAgentRow(card) {
   // Case C: agent isn't configured at all — quietly omit the row.
   if (!isAgentConfigured()) return null;
 
-  // Case D: auto-agent ON, jobId not assigned yet. This covers (a) the brief
-  // window between identify-complete and submission-success, (b) submission
-  // genuinely in flight, and (c) submission silently failed without setting
-  // agentError. Show status + a retry; let the user override with Quick if
-  // they're impatient.
-  if (card.autoAgent) {
+  // Determine the mode the card was created under (with legacy fallback).
+  var cardMode = card.autoMode || (card.autoAgent ? "full" : "off");
+
+  // Case D: auto-agent ON (full or quick), jobId not assigned yet. The
+  // submission auto-fires after Claude finishes; this is the brief window
+  // between identify-complete and submission-success (or a silent failure
+  // without agentError). Show status + a retry in the SAME mode — no
+  // alternate-mode option here, to avoid the wasted-call confusion the user
+  // hit earlier.
+  if (cardMode !== "off") {
+    var quickAttempt = (cardMode === "quick");
     var row = makeRow("running",
       '<span><span class="agent-mini-spin"></span>submitting&hellip;</span>',
       '');
-    row.appendChild(makeActionButton("Retry",        function() { submitCardToAgent(card.id); }));
-    row.appendChild(makeActionButton("Quick lookup", function() { submitCardToAgent(card.id, {quickLookup: true}); }));
+    row.appendChild(makeActionButton("Retry", function() {
+      submitCardToAgent(card.id, {quickLookup: quickAttempt});
+    }));
     return row;
   }
 
-  // Case E: auto-agent OFF, prompt user to pick a mode.
+  // Case E: auto-mode = Off, prompt user to pick which mode to send.
   var row = makeRow("none", '', '');
   row.appendChild(makeActionButton("Send full",   function() { submitCardToAgent(card.id); }));
   var quickBtn = makeActionButton("Quick lookup", function() { submitCardToAgent(card.id, {quickLookup: true}); });
