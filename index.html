@@ -538,6 +538,14 @@
     padding: 10px 14px; overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
+  .comp-manual-links {
+    display: flex; gap: 16px; flex-wrap: wrap;
+    padding: 0 0 10px 0; margin-bottom: 8px;
+    border-bottom: 1px solid #2a2a2a;
+    font-size: 0.85em;
+  }
+  .comp-manual-links a { color: #7aa2ff; text-decoration: underline; }
+  .comp-manual-links a:active { color: #aac8ff; }
   .comp-card {
     display: flex; gap: 10px;
     padding: 10px;
@@ -561,8 +569,9 @@
   .comp-price-row {
     font-size: 0.85em; color: #ccc; margin-top: 4px;
   }
-  .comp-total { font-weight: 600; color: #9fd89f; }
+  .comp-item-price { font-weight: 600; color: #9fd89f; }
   .comp-shipping { color: #888; font-size: 0.9em; }
+  .comp-total-muted { color: #666; font-size: 0.8em; }
   .comp-detail-row {
     display: flex; gap: 6px; flex-wrap: wrap;
     margin-top: 4px;
@@ -4131,6 +4140,29 @@ function renderAgentRowHtml(item) {
   return "";
 }
 
+// Manual "check it yourself" links for Terapeak and WorthPoint — APR stopped
+// auto-scraping these two (0% hit rate across 93 real attempts each; see
+// 2026-06-30 notes), so we offer a one-tap pre-filled search instead.
+function terapeakWorthpointLinksEl(term) {
+  term = (term || "").trim();
+  var wrap = document.createElement("div");
+  wrap.className = "comp-manual-links";
+  if (!term) return wrap;
+  var q = encodeURIComponent(term);
+  var now = Date.now();
+  var threeYearsAgo = now - 1095 * 24 * 60 * 60 * 1000;
+  var terapeakUrl =
+    "https://www.ebay.com/sh/research?marketplace=EBAY-US&keywords=" + q +
+    "&dayRange=1095&endDate=" + now + "&startDate=" + threeYearsAgo +
+    "&categoryId=0&tabName=SOLD&tz=America%2FChicago";
+  var worthpointUrl =
+    "https://www.worthpoint.com/inventory/search?categories=&query=" + q;
+  wrap.innerHTML =
+    '<a href="' + terapeakUrl + '" target="_blank" rel="noopener noreferrer">Check Terapeak &#8599;</a>' +
+    '<a href="' + worthpointUrl + '" target="_blank" rel="noopener noreferrer">Check WorthPoint &#8599;</a>';
+  return wrap;
+}
+
 /* Comps modal — opens when the user taps "view N" on the Agent row. Item
  * here is whichever record carries the agentResult: a group item snapshot or
  * a history entry. Read-only display, no edits. */
@@ -4141,6 +4173,7 @@ function openCompsModal(item) {
   var bodyEl  = $("compsModalBody");
   titleEl.textContent = r.comps.length + " comparable listing" + (r.comps.length === 1 ? "" : "s");
   bodyEl.innerHTML = "";
+  bodyEl.appendChild(terapeakWorthpointLinksEl(item && (item.query || item.title)));
   r.comps.forEach(function(c) { bodyEl.appendChild(buildCompCard(c)); });
   show($("compsModalOverlay"));
 }
@@ -4916,10 +4949,15 @@ function buildCompCard(c) {
   var itemP = (c.price != null && isFinite(c.price)) ? Number(c.price) : null;
   var shipP = (c.shipping_cost != null && isFinite(c.shipping_cost)) ? Number(c.shipping_cost) : 0;
   var total = itemP != null ? itemP + shipP : null;
-  if (total != null) {
-    var totalHtml = '<span class="comp-total">$' + total.toFixed(2) + ' total</span>';
-    var shipHtml  = '<span class="comp-shipping"> &middot; $' + itemP.toFixed(2) + ' item + $' + shipP.toFixed(2) + ' ship</span>';
-    priceRow.innerHTML = totalHtml + shipHtml;
+  if (itemP != null) {
+    // Item price is the headline figure (green) since that's what's actually
+    // comparable to your listing price; shipping is secondary; total
+    // (item+shipping) is a muted aside for reference only.
+    var itemHtml = '<span class="comp-item-price">$' + itemP.toFixed(2) + '</span>';
+    var shipText = shipP === 0 ? "free ship" : ("+$" + shipP.toFixed(2) + " ship");
+    var shipHtml = ' <span class="comp-shipping">' + shipText + '</span>';
+    var totalHtml = (total != null) ? ' <span class="comp-total-muted">($' + total.toFixed(2) + ' total)</span>' : '';
+    priceRow.innerHTML = itemHtml + shipHtml + totalHtml;
   } else {
     priceRow.textContent = "Price unknown";
   }
