@@ -3117,8 +3117,46 @@ function parseJson(text) {
   var first = t.indexOf("{");
   var last  = t.lastIndexOf("}");
   if (first >= 0 && last > first) t = t.slice(first, last + 1);
+  else if (first >= 0) t = t.slice(first);  // truncated response: no closing brace at all
   try { return JSON.parse(t); }
-  catch (e) { throw new Error("Could not parse model response as JSON:\n" + text.slice(0, 400)); }
+  catch (e) {
+    // Salvage path for bulk scans: if the response was cut off by the token
+    // limit mid-pick, recover every COMPLETE pick object and drop the tail.
+    var salvaged = salvageTruncatedPicks(t);
+    if (salvaged) return salvaged;
+    throw new Error("Could not parse model response as JSON:\n" + text.slice(0, 400));
+  }
+}
+
+/* Recover a truncated {"table_summary": ..., "picks": [ {...}, {...}, <cut> }
+ * response by walking the string with proper quote/escape tracking and
+ * keeping everything up to the last pick object that closed cleanly. */
+function salvageTruncatedPicks(t) {
+  if (t.indexOf('"picks"') === -1) return null;
+  var inString = false, escape = false, depth = 0, lastPickEnd = -1;
+  for (var i = 0; i < t.length; i++) {
+    var c = t[i];
+    if (inString) {
+      if (escape) { escape = false; }
+      else if (c === "\\") { escape = true; }
+      else if (c === '"') { inString = false; }
+      continue;
+    }
+    if (c === '"') { inString = true; }
+    else if (c === "{" || c === "[") { depth++; }
+    else if (c === "}" || c === "]") {
+      depth--;
+      // A "}" that returns us to depth 2 closes one pick ({root -> [picks -> {pick).
+      if (c === "}" && depth === 2) lastPickEnd = i;
+    }
+  }
+  if (lastPickEnd === -1) return null;
+  try {
+    var obj = JSON.parse(t.slice(0, lastPickEnd + 1) + "]}");
+    if (!Array.isArray(obj.picks) || obj.picks.length === 0) return null;
+    obj._truncated = true;  // let callers flag that the tail was dropped
+    return obj;
+  } catch (e2) { return null; }
 }
 
 function tokenize(s) {
@@ -5941,6 +5979,7 @@ block +
 "- box = the item's bounding box in THIS image as integers 0-1000: x measured from the left edge, y from the top, [left, top, right, bottom]. Keep it tight around the item; it is used to auto-crop the item for the user.\n" +
 "- Base grab prices on resale value net of fees AND on the format above: factor in that desirable items rarely survive to low prices, so a realistic grab_high_usd is where the expected resale still leaves solid profit.\n" +
 "- Only flag items actually visible; never invent. Fewer strong picks beat a padded list; an empty picks array is a valid answer for a junk table.\n" +
+"- Keep text fields tight: details at most 12 words; rationale and look_for one short sentence each. The response must be COMPLETE, valid JSON.\n" +
 "- Return JSON and nothing else.";
 }
 
@@ -5951,7 +5990,7 @@ async function callBulkAI(model, sendImage, hint, guideIds) {
     try { guides = await ensureGuideBodies(ids); } catch (e) { guides = []; }
   }
   var promptText = buildBulkPrompt(hint, guides);
-  var maxTokens = 3000;
+  var maxTokens = 8000;  // dense tables produce long pick lists; headroom prevents mid-JSON truncation
   var photosList = [{ mediaType: sendImage.mediaType, base64: sendImage.base64 }];
   if (gwConfigured()) return callGateway(model, photosList, promptText, maxTokens);
   return callClaude(localStorage.getItem(LS_KEY), model, photosList, promptText, maxTokens);
@@ -6081,7 +6120,8 @@ async function runBulkScan(scanId) {
       }
       picks.push(pick);
     }
-    fresh.tableSummary = String(data.table_summary || "").slice(0, 300);
+    fresh.tableSummary = String(data.table_summary || "").slice(0, 300) +
+      (data._truncated ? " (response ran long — last pick may be missing)" : "");
     fresh.picks  = picks;
     fresh.status = "done";
     fresh.error  = null;
