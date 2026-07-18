@@ -971,6 +971,21 @@
 <div class="muted" id="subtitle">Identify item &rarr; research prices</div>
 
 <div id="settings" class="section hidden">
+  <div class="settings-subhead" style="margin-top:0;">AI Gateway (recommended)</div>
+  <div class="footnote" style="margin-top:0; margin-bottom:8px;">
+    Routes identifies through your gateway worker (OpenRouter) &mdash; any model, one token,
+    and Expert Mode guides. When set, the direct Anthropic key below is only a fallback.
+  </div>
+  <label for="gwUrl">Gateway URL</label>
+  <input type="text" id="gwUrl" placeholder="https://ai-gateway.YOURNAME.workers.dev" autocomplete="off" spellcheck="false" autocapitalize="none" autocorrect="off">
+  <label for="gwToken">Gateway app token</label>
+  <input type="password" id="gwToken" placeholder="APP_TOKEN value" autocomplete="off" spellcheck="false">
+  <label for="gwModel">Model (via gateway)</label>
+  <select id="gwModel"></select>
+  <button id="gwRefreshBtn" style="margin-top:4px;">&#8635; Refresh models &amp; guides</button>
+  <div class="footnote" id="gwStatus" style="margin-top:-4px;"></div>
+
+  <div class="settings-subhead">Direct Anthropic (fallback)</div>
   <label for="apikey">Anthropic API Key</label>
   <input type="password" id="apikey" placeholder="sk-ant-..." autocomplete="off" spellcheck="false">
   <label for="model">Model</label>
@@ -1012,6 +1027,13 @@
   <label for="agentApiKey">Agent API key (X-API-Key)</label>
   <input type="password" id="agentApiKey" placeholder="value of INTERNAL_API_KEY from .env" autocomplete="off" spellcheck="false">
   <div class="footnote" style="margin-top:-2px;">Leave blank to hide the &ldquo;Send to Agent&rdquo; button.</div>
+  <label for="agentMatchMode">Comp match mode</label>
+  <select id="agentMatchMode">
+    <option value="auto">Auto (detect ISBN/UPC/model# in title)</option>
+    <option value="exact">Exact — stricter bar, for items with a specific real-world counterpart</option>
+    <option value="similar">Similar — today's default, for generic/vintage items</option>
+  </select>
+  <div class="footnote" style="margin-top:-2px;">Applies to every research submission until changed here.</div>
 
   <div class="row" style="margin-top:12px;">
     <button class="primary" id="saveSettingsBtn">Save</button>
@@ -1052,6 +1074,15 @@
     </div>
   </div>
 
+  <div class="section hidden" id="expertSection">
+    <div class="hint-label-row">
+      <label style="margin:0;">Expert Mode &mdash; guides</label>
+      <span class="muted" id="expertStatus" style="font-size:0.75em;"></span>
+    </div>
+    <div class="tk-row" id="guideChips"></div>
+    <div class="footnote" style="margin-top:4px;">Tap a guide to apply it to the next identify. No guide selected = normal mode.</div>
+  </div>
+
   <div class="section">
     <button class="primary" id="identifyBtn" disabled>Identify Item</button>
     <div class="footnote" style="margin-top:-2px;">Tap to send. Photos clear instantly so you can prep the next item while this one runs.</div>
@@ -1076,7 +1107,12 @@
     <div class="tk-group" id="tkAdj"></div>
     <div class="kv hidden" id="notesRow"><div class="k">Notes</div><div class="v" id="rNotes">&mdash;</div></div>
 
-    <button id="askOpusBtn" style="margin-top:14px;">&#129504; Ask Opus (second opinion)</button>
+    <div class="kv hidden" id="expertRow"><div class="k">Expert assessment</div><div class="v" id="rExpert">&mdash;</div></div>
+
+    <div class="row" style="margin-top:14px;">
+      <select id="secondModelInline" style="margin-bottom:0;"></select>
+      <button id="askOpusBtn" style="margin-bottom:0;">&#129504; Second opinion</button>
+    </div>
 
     <div style="margin-top:16px;">
       <label for="negTerms">Exclude (negative terms)</label>
@@ -1383,6 +1419,16 @@ var LS_ACTIVE_GROUP = "itemid.activeGroup";
 var LS_ACTIVE_PROFILE = "itemid.activeProfile";
 var LS_AGENT_URL = "itemid.agentBaseUrl";
 var LS_AGENT_KEY = "itemid.agentApiKey";
+var LS_MATCH_MODE = "itemid.matchMode"; // "auto" | "exact" | "similar"
+var LS_GW_URL     = "itemid.gwUrl";
+var LS_GW_TOKEN   = "itemid.gwToken";
+var LS_GW_MODEL   = "itemid.gwModel";        // model used for normal identifies (gateway path)
+var LS_GW_SECOND  = "itemid.gwSecondModel";  // model used by the Second opinion button
+var LS_GW_CATALOG = "itemid.gwCatalog";      // cached {aliases, models} from GET /models
+var LS_GUIDE_LIST   = "itemid.guideList";    // cached [{id,title,bytes,updated}] from GET /guides
+var LS_GUIDE_ACTIVE = "itemid.guideActive";  // ids of guides applied to the next identify
+var GUIDE_BODY_PREFIX = "itemid.guideBody."; // + id -> cached markdown
+var GUIDE_CHAR_BUDGET = 80000;               // max guide chars sent per identify
 var TAXBP_DEFAULT = 10;
 // Active profile's slot count, cached for synchronous access. Set by
 // refreshActiveProfileCache() at app load and after every profile apply/edit.
@@ -1457,6 +1503,8 @@ var photos = [];
 var fields = defaultFields();
 var currentHistoryId = null;
 var lastModelUsed = null;
+var lastGuideIdsUsed = null;  // guide-id snapshot of the identify shown in the result panel
+var lastGuidesUsedTitles = [];  // titles actually sent (for the Expert badge)
 
 /* Transient handle for the current item's Send-to-Agent submission. Set when
  * the user taps "Send to Agent" from the result panel, cleared when the user
@@ -1515,6 +1563,10 @@ function loadSettings() {
   $("feePerOrder").value = m.fees.per_order;
   $("agentBaseUrl").value = localStorage.getItem(LS_AGENT_URL) || "";
   $("agentApiKey").value  = localStorage.getItem(LS_AGENT_KEY) || "";
+  $("agentMatchMode").value = matchMode();
+  $("gwUrl").value   = localStorage.getItem(LS_GW_URL) || "";
+  $("gwToken").value = localStorage.getItem(LS_GW_TOKEN) || "";
+  populateModelSelects();
 }
 function saveSettings() {
   localStorage.setItem(LS_KEY, $("apikey").value.trim());
@@ -1538,7 +1590,15 @@ function saveSettings() {
   var agentUrl = $("agentBaseUrl").value.trim().replace(/\/+$/, "");
   localStorage.setItem(LS_AGENT_URL, agentUrl);
   localStorage.setItem(LS_AGENT_KEY, $("agentApiKey").value.trim());
+  setMatchMode($("agentMatchMode").value);
+  var hadGw = gwConfigured();
+  localStorage.setItem(LS_GW_URL, $("gwUrl").value.trim().replace(/\/+$/, ""));
+  localStorage.setItem(LS_GW_TOKEN, $("gwToken").value.trim());
+  if ($("gwModel").value) localStorage.setItem(LS_GW_MODEL, $("gwModel").value);
   updateAgentButtonVisibility();
+  // First-time gateway setup (or URL change): pull models + guides right away.
+  if (gwConfigured() && !hadGw) refreshGatewayData();
+  renderGuideChips();
 }
 
 function isAgentConfigured() {
@@ -1550,6 +1610,268 @@ function agentBaseUrl() {
 }
 function agentApiKey() {
   return localStorage.getItem(LS_AGENT_KEY) || "";
+}
+function matchMode() {
+  var v = localStorage.getItem(LS_MATCH_MODE);
+  return (v === "exact" || v === "similar") ? v : "auto";
+}
+function setMatchMode(v) {
+  localStorage.setItem(LS_MATCH_MODE, (v === "exact" || v === "similar") ? v : "auto");
+}
+
+/* ============================================================
+ * AI Gateway (OpenRouter proxy worker) + Expert Mode guides
+ * ============================================================ */
+
+function gwConfigured() {
+  return !!(localStorage.getItem(LS_GW_URL) && localStorage.getItem(LS_GW_TOKEN));
+}
+function gwBase()  { return (localStorage.getItem(LS_GW_URL) || "").replace(/\/+$/, ""); }
+function gwAuth()  { return { "authorization": "Bearer " + (localStorage.getItem(LS_GW_TOKEN) || "") }; }
+
+// True when SOME identify path is usable (gateway or direct key).
+function aiReady() {
+  return gwConfigured() || !!localStorage.getItem(LS_KEY);
+}
+function aiNotReadyMsg() {
+  return "Set your Gateway URL + token (or an Anthropic API key) in ⚙ first.";
+}
+
+// The model used for a normal identify on the active path.
+function defaultModel() {
+  if (gwConfigured()) return localStorage.getItem(LS_GW_MODEL) || "anthropic/claude-sonnet-5";
+  return localStorage.getItem(LS_MODEL) || "claude-sonnet-4-6";
+}
+// The model used by the Second opinion button on the active path.
+function secondOpinionModel() {
+  if (gwConfigured()) {
+    var stored = localStorage.getItem(LS_GW_SECOND);
+    if (stored) return stored;
+    var guess = catalogFindId(/claude-opus/) || catalogFindId(/claude-fable/);
+    return guess || "anthropic/claude-sonnet-5";
+  }
+  return "claude-opus-4-6";
+}
+function modelShortName(id) {
+  if (!id) return "";
+  var s = String(id);
+  if (s.indexOf("/") !== -1) s = s.split("/").pop();
+  s = s.replace(/^claude-/, "").replace(/-\d{8}$/, "").replace(/-/g, " ");
+  return s.replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+}
+
+function getCatalog() {
+  try { return JSON.parse(localStorage.getItem(LS_GW_CATALOG)) || null; }
+  catch (e) { return null; }
+}
+function catalogFindId(re) {
+  var cat = getCatalog();
+  if (!cat || !cat.models) return null;
+  var hits = cat.models.filter(function(m) { return re.test(m.id); });
+  if (hits.length === 0) return null;
+  hits.sort(function(a, b) { return b.id.localeCompare(a.id); });  // newest version-ish first
+  return hits[0].id;
+}
+
+// Fill the gateway model select (settings) + the inline second-opinion select.
+var MODEL_PROVIDERS = ["anthropic/", "openai/", "google/", "x-ai/", "meta-llama/", "qwen/", "mistralai/"];
+function populateModelSelects() {
+  var cat = getCatalog();
+  var gwSel = $("gwModel");
+  var soSel = $("secondModelInline");
+  gwSel.innerHTML = "";
+  soSel.innerHTML = "";
+  if (!gwConfigured()) {
+    // Direct path: second-opinion choices are the legacy Anthropic ids.
+    [["claude-opus-4-6", "Opus 4.6"], ["claude-sonnet-4-6", "Sonnet 4.6"], ["claude-haiku-4-5-20251001", "Haiku 4.5"]]
+      .forEach(function(p) {
+        var o = document.createElement("option");
+        o.value = p[0]; o.textContent = p[1];
+        soSel.appendChild(o);
+      });
+    soSel.value = "claude-opus-4-6";
+    var oo = document.createElement("option");
+    oo.value = ""; oo.textContent = "(set gateway first)";
+    gwSel.appendChild(oo);
+    return;
+  }
+  function addOpt(sel, value, label) {
+    var o = document.createElement("option");
+    o.value = value; o.textContent = label;
+    sel.appendChild(o);
+  }
+  function addGroup(sel, label) {
+    var g = document.createElement("optgroup");
+    g.label = label;
+    sel.appendChild(g);
+    return g;
+  }
+  [gwSel, soSel].forEach(function(sel) {
+    if (cat && cat.aliases && Object.keys(cat.aliases).length) {
+      var ag = addGroup(sel, "Aliases (routing table)");
+      Object.keys(cat.aliases).sort().forEach(function(a) {
+        addOpt(ag, a, a + " → " + modelShortName(cat.aliases[a]));
+      });
+    }
+    if (cat && cat.models) {
+      var vision = cat.models.filter(function(m) {
+        if (!m.vision) return false;
+        return MODEL_PROVIDERS.some(function(p) { return m.id.indexOf(p) === 0; });
+      });
+      var byProvider = {};
+      vision.forEach(function(m) {
+        var prov = m.id.split("/")[0];
+        (byProvider[prov] = byProvider[prov] || []).push(m);
+      });
+      Object.keys(byProvider).sort().forEach(function(prov) {
+        var g = addGroup(sel, prov);
+        byProvider[prov].sort(function(a, b) { return a.id.localeCompare(b.id); })
+          .forEach(function(m) { addOpt(g, m.id, m.name || m.id); });
+      });
+    }
+    if (!sel.options.length) addOpt(sel, "anthropic/claude-sonnet-5", "Sonnet 5 (tap Refresh for full list)");
+  });
+  var storedModel = localStorage.getItem(LS_GW_MODEL);
+  if (storedModel) gwSel.value = storedModel;
+  if (!gwSel.value) gwSel.selectedIndex = 0;
+  soSel.value = secondOpinionModel();
+  if (!soSel.value) soSel.selectedIndex = 0;
+}
+
+// Pull the model catalog + guide list (and guide bodies) from the gateway.
+async function refreshGatewayData() {
+  if (!gwConfigured()) return;
+  var status = $("gwStatus");
+  status.textContent = "Refreshing…";
+  try {
+    var mres = await fetch(gwBase() + "/models", { headers: gwAuth() });
+    if (!mres.ok) throw new Error("models HTTP " + mres.status);
+    var cat = await mres.json();
+    localStorage.setItem(LS_GW_CATALOG, JSON.stringify({
+      aliases: cat.aliases || {},
+      // Keep the cache lean: only what the dropdowns need.
+      models: (cat.models || []).map(function(m) {
+        return { id: m.id, name: m.name, vision: m.vision };
+      })
+    }));
+
+    var gres = await fetch(gwBase() + "/guides", { headers: gwAuth() });
+    if (!gres.ok) throw new Error("guides HTTP " + gres.status);
+    var glist = (await gres.json()).guides || [];
+    localStorage.setItem(LS_GUIDE_LIST, JSON.stringify(glist));
+
+    // Cache every guide body so Expert Mode works on flaky venue Wi-Fi.
+    var fetched = 0;
+    for (var i = 0; i < glist.length; i++) {
+      var g = glist[i];
+      var cached = getGuideCacheMeta(g.id);
+      if (cached && cached.updated === g.updated) continue;  // up to date
+      var bres = await fetch(gwBase() + "/guides/" + encodeURIComponent(g.id), { headers: gwAuth() });
+      if (!bres.ok) continue;
+      var text = await bres.text();
+      try {
+        localStorage.setItem(GUIDE_BODY_PREFIX + g.id,
+          JSON.stringify({ updated: g.updated, text: text }));
+        fetched++;
+      } catch (e) { /* localStorage full — guide will fetch on demand */ }
+    }
+    // Drop cached bodies for guides that no longer exist.
+    var live = {};
+    glist.forEach(function(g) { live[g.id] = true; });
+    for (var k = localStorage.length - 1; k >= 0; k--) {
+      var key = localStorage.key(k);
+      if (key && key.indexOf(GUIDE_BODY_PREFIX) === 0 && !live[key.slice(GUIDE_BODY_PREFIX.length)]) {
+        localStorage.removeItem(key);
+      }
+    }
+    // Prune active selections pointing at deleted guides.
+    setActiveGuideIds(activeGuideIds().filter(function(id) { return live[id]; }));
+
+    populateModelSelects();
+    renderGuideChips();
+    status.textContent = "✓ " + (cat.models || []).length + " models, " + glist.length +
+      " guide(s)" + (fetched ? " (" + fetched + " updated)" : "");
+  } catch (e) {
+    status.textContent = "Refresh failed: " + (e.message || e);
+  }
+}
+
+function guideList() {
+  try { return JSON.parse(localStorage.getItem(LS_GUIDE_LIST)) || []; }
+  catch (e) { return []; }
+}
+function getGuideCacheMeta(id) {
+  try {
+    var raw = localStorage.getItem(GUIDE_BODY_PREFIX + id);
+    if (!raw) return null;
+    var o = JSON.parse(raw);
+    return { updated: o.updated };
+  } catch (e) { return null; }
+}
+function getGuideBody(id) {
+  try {
+    var raw = localStorage.getItem(GUIDE_BODY_PREFIX + id);
+    return raw ? (JSON.parse(raw).text || "") : "";
+  } catch (e) { return ""; }
+}
+async function ensureGuideBodies(ids) {
+  // Returns [{id, title, text}] for every id we can resolve (cache first, then network).
+  var list = guideList();
+  var out = [];
+  for (var i = 0; i < ids.length; i++) {
+    var id = ids[i];
+    var meta = null;
+    for (var j = 0; j < list.length; j++) if (list[j].id === id) meta = list[j];
+    var text = getGuideBody(id);
+    if (!text && gwConfigured()) {
+      try {
+        var res = await fetch(gwBase() + "/guides/" + encodeURIComponent(id), { headers: gwAuth() });
+        if (res.ok) {
+          text = await res.text();
+          try { localStorage.setItem(GUIDE_BODY_PREFIX + id, JSON.stringify({ updated: meta && meta.updated, text: text })); }
+          catch (e) { /* cache full; still usable this once */ }
+        }
+      } catch (e) { /* offline and uncached — skip this guide */ }
+    }
+    if (text) out.push({ id: id, title: (meta && meta.title) || id, text: text });
+  }
+  return out;
+}
+
+function activeGuideIds() {
+  try { return JSON.parse(localStorage.getItem(LS_GUIDE_ACTIVE)) || []; }
+  catch (e) { return []; }
+}
+function setActiveGuideIds(ids) {
+  localStorage.setItem(LS_GUIDE_ACTIVE, JSON.stringify(ids || []));
+}
+
+function renderGuideChips() {
+  var section = $("expertSection");
+  if (!section) return;
+  var list = guideList();
+  if (!gwConfigured() || list.length === 0) { hide(section); return; }
+  show(section);
+  var active = activeGuideIds();
+  var row = $("guideChips");
+  row.innerHTML = "";
+  list.forEach(function(g) {
+    var btn = document.createElement("button");
+    btn.type = "button";
+    var on = active.indexOf(g.id) !== -1;
+    btn.className = "word-toggle" + (on ? " active" : "");
+    btn.textContent = g.title;
+    btn.addEventListener("click", function() {
+      var ids = activeGuideIds();
+      var idx = ids.indexOf(g.id);
+      if (idx === -1) ids.push(g.id); else ids.splice(idx, 1);
+      setActiveGuideIds(ids);
+      renderGuideChips();
+    });
+    row.appendChild(btn);
+  });
+  var n = active.length;
+  $("expertStatus").textContent = n ? (n + " guide" + (n > 1 ? "s" : "") + " active") : "off";
 }
 
 function updateAgentButtonVisibility() {
@@ -1571,7 +1893,13 @@ function numOr(v, fallback) {
 $("settingsBtn").addEventListener("click", function() { loadSettings(); show($("settings")); });
 $("closeSettingsBtn").addEventListener("click", function() { hide($("settings")); });
 $("saveSettingsBtn").addEventListener("click", function() { saveSettings(); hide($("settings")); updateEstimates(); });
-if (!localStorage.getItem(LS_KEY)) { loadSettings(); show($("settings")); }
+if (!aiReady()) { loadSettings(); show($("settings")); }
+
+// Expert Mode + model picker startup: render from cache instantly, then
+// refresh models/guides quietly in the background when the gateway is set.
+renderGuideChips();
+populateModelSelects();
+if (gwConfigured()) { refreshGatewayData().catch(function() { /* offline: cache carries us */ }); }
 
 function loadHintState() {
   var sticky = localStorage.getItem(LS_STICKY) === "1";
@@ -1843,7 +2171,18 @@ $("savePhotosBtn").addEventListener("click", function() {
 });
 
 $("identifyBtn").addEventListener("click", function() { enqueueIdentifyJob(); });
-$("askOpusBtn").addEventListener("click", function() { identify("claude-opus-4-6"); });
+$("askOpusBtn").addEventListener("click", function() {
+  identify($("secondModelInline").value || secondOpinionModel());
+});
+$("secondModelInline").addEventListener("change", function() {
+  if (gwConfigured() && this.value) localStorage.setItem(LS_GW_SECOND, this.value);
+});
+$("gwRefreshBtn").addEventListener("click", function() {
+  // Save any just-typed URL/token first so the refresh uses them.
+  localStorage.setItem(LS_GW_URL, $("gwUrl").value.trim().replace(/\/+$/, ""));
+  localStorage.setItem(LS_GW_TOKEN, $("gwToken").value.trim());
+  refreshGatewayData();
+});
 
 var PROMPT_BASE = "You are identifying an item in a photo (or multiple photos of the same item) for resale research on eBay and WorthPoint.\n\n" +
 "Analyze the image(s) and return ONLY a JSON object (no markdown fences, no prose before or after). Use this exact schema:\n\n" +
@@ -1872,10 +2211,48 @@ function buildPrompt(hint) {
   return PROMPT_BASE;
 }
 
+/* Expert Mode: same JSON contract as PROMPT_BASE plus expert fields, with the
+ * selected guide(s) prepended as the primary identification reference. */
+function buildExpertPrompt(hint, guides /* [{title, text}] */) {
+  var block = "";
+  for (var i = 0; i < guides.length; i++) {
+    block += "===== EXPERT GUIDE: " + guides[i].title + " =====\n" + guides[i].text + "\n\n";
+  }
+  if (block.length > GUIDE_CHAR_BUDGET) block = block.slice(0, GUIDE_CHAR_BUDGET) + "\n[guide text truncated]\n\n";
+
+  var pre = (hint && hint.trim())
+    ? "USER CONTEXT (a helpful prior from the user; verify against the photo, do not treat as fact): " + hint.trim() + "\n\n"
+    : "";
+
+  return pre +
+"You are an expert reseller's field assistant at a live auction, identifying an item in the photo(s) so the buyer can decide what to bid. The EXPERT GUIDE(S) below are your primary reference — follow their identification steps (decision trees, marks, date codes, era keys) wherever they apply to what is visible.\n\n" +
+block +
+"Analyze the image(s) using the guide(s) and return ONLY a JSON object (no markdown fences, no prose before or after). Use this exact schema:\n\n" +
+"{\n" +
+"  \"model\": \"<model number or name, or empty string>\",\n" +
+"  \"brand\": \"<brand or manufacturer, or empty string>\",\n" +
+"  \"item\": \"<what the item is (noun phrase, 2-4 words)>\",\n" +
+"  \"adjectives\": \"<2-4 core descriptive terms useful for search. Space-separated, no commas>\",\n" +
+"  \"confidence\": \"<high | medium | low>\",\n" +
+"  \"notes\": \"<one short sentence flagging anything uncertain worth user verification, or empty string>\",\n" +
+"  \"estimated_value_usd\": <number: most likely eBay sold price in USD per the guide's pricing guidance, or null>,\n" +
+"  \"sell_through_pct\": <integer 0-100: best estimate of eBay sell-through rate, or null>,\n" +
+"  \"expert_summary\": \"<1-3 sentences: exactly what this is in the guide's terminology, including any decoded marks/codes/dates and the features that drove the identification>\",\n" +
+"  \"desirability\": \"<high | medium | low: collector demand per the guide>\",\n" +
+"  \"value_low_usd\": <number: realistic low end of the eBay sold range, or null>,\n" +
+"  \"value_high_usd\": <number: realistic high end of the eBay sold range, or null>\n" +
+"}\n\n" +
+"Rules:\n" +
+"- Apply the guide's identification sequence to what is actually visible; do not invent marks, codes, or details you cannot see. Low confidence is acceptable.\n" +
+"- Choose search keywords the way the guide prescribes (e.g. its primary-keyword and title rules). Output fields are assembled MODEL BRAND ITEM ADJECTIVES for an eBay search; keep each clean and tight.\n" +
+"- Base estimated_value_usd, value_low_usd and value_high_usd on the guide's pricing reality for this specific variant and visible condition; estimated_value_usd should fall inside the range.\n" +
+"- If the item does not match any guide, say so plainly in expert_summary and identify it from general knowledge instead.\n" +
+"- Return JSON and nothing else.";
+}
+
 async function identify(modelOverride) {
-  var key = localStorage.getItem(LS_KEY);
-  if (!key) {
-    showError("Set your Anthropic API key in \u2699 first.");
+  if (!aiReady()) {
+    showError(aiNotReadyMsg());
     show($("settings"));
     return;
   }
@@ -1890,12 +2267,15 @@ async function identify(modelOverride) {
   $("askOpusBtn").disabled = true;
 
   try {
-    var model = modelOverride || localStorage.getItem(LS_MODEL) || "claude-sonnet-4-6";
-    // For second opinion, reuse the hint from the original identify (even if cleared from the input).
+    var model = modelOverride || defaultModel();
+    // For second opinion, reuse the hint AND guides from the original identify.
     var hint = isSecondOpinion ? lastHintUsed : $("hintText").value;
-    var data = await callClaude(key, model, photos, hint);
+    var guideIds = isSecondOpinion ? (lastGuideIdsUsed || []) : activeGuideIds();
+    var data = await callAI(model, photos, hint, guideIds);
     lastModelUsed = model;
     lastHintUsed  = hint;
+    lastGuideIdsUsed = guideIds;
+    lastGuidesUsedTitles = data._guidesUsed || [];
     populateResult(data);
     show($("result"));
     if (!isSecondOpinion && !$("stickyHint").checked) $("hintText").value = "";
@@ -1925,16 +2305,16 @@ async function identify(modelOverride) {
  * ============================================================ */
 
 async function enqueueIdentifyJob() {
-  var key = localStorage.getItem(LS_KEY);
-  if (!key) {
-    showError("Set your Anthropic API key in ⚙ first.");
+  if (!aiReady()) {
+    showError(aiNotReadyMsg());
     show($("settings"));
     return;
   }
   if (photos.length === 0) return;
 
-  var model = localStorage.getItem(LS_MODEL) || "claude-sonnet-4-6";
+  var model = defaultModel();
   var hint  = $("hintText").value;
+  var guideIds = activeGuideIds();  // snapshot: guides applied when THIS job was queued
 
   // Snapshot photos + label + a thumbnail for the queue row.
   var photosSnapshot = photos.slice();  // shallow copy; File refs stay shared
@@ -1953,6 +2333,7 @@ async function enqueueIdentifyJob() {
     photos:       photosSnapshot,
     hint:         hint,
     model:        model,
+    guideIds:     guideIds,
     startedAt:    Date.now(),
     finishedAt:   null,
     result:       null,
@@ -1982,9 +2363,8 @@ async function enqueueIdentifyJob() {
 async function runJob(job) {
   job.status = "running";
   renderJobQueue();
-  var key = localStorage.getItem(LS_KEY);
   try {
-    var data = await callClaude(key, job.model, job.photos, job.hint);
+    var data = await callAI(job.model, job.photos, job.hint, job.guideIds || []);
     job.result = data;
     job.status = "done";
     // If the result has identifiable terms, upgrade the label so the queue
@@ -2024,6 +2404,8 @@ function openJob(jobId) {
   photos = job.photos.slice();
   lastModelUsed = job.model;
   lastHintUsed  = job.hint;
+  lastGuideIdsUsed = job.guideIds || [];
+  lastGuidesUsedTitles = (job.result && job.result._guidesUsed) || [];
   $("hintText").value = job.hint || "";
   fields = defaultFields();
   fields.taxBpPct = getStickyTaxBpPct();
@@ -2203,6 +2585,7 @@ async function sendToAgent(opts) {
     images:          images,
     condition:       "used",
     max_tier:        5,
+    match_mode:      matchMode(),
     client_id:       "item_id_pwa",
     idempotency_key: idempotencyKey
   };
@@ -2497,15 +2880,75 @@ function refreshIfShowingSavedView() {
   }
 }
 
-async function callClaude(apiKey, model, photosList, hint) {
+/* Single entry point for every identify. Builds the prompt (expert when guides
+ * are active), then routes to the gateway if configured, else direct Anthropic.
+ * guideIds is optional — pass a job's snapshot; defaults to the live selection. */
+async function callAI(model, photosList, hint, guideIds) {
+  var ids = (guideIds === undefined) ? activeGuideIds() : (guideIds || []);
+  var promptText, isExpert = false, guidesUsed = [];
+  if (ids.length > 0) {
+    var resolved = await ensureGuideBodies(ids);
+    if (resolved.length > 0) {
+      promptText = buildExpertPrompt(hint, resolved);
+      isExpert = true;
+      guidesUsed = resolved.map(function(g) { return g.title; });
+    }
+  }
+  if (!promptText) promptText = buildPrompt(hint);
+  var maxTokens = isExpert ? 1000 : 600;
+
+  var data;
+  if (gwConfigured()) {
+    data = await callGateway(model, photosList, promptText, maxTokens);
+  } else {
+    data = await callClaude(localStorage.getItem(LS_KEY), model, photosList, promptText, maxTokens);
+  }
+  if (isExpert) data._guidesUsed = guidesUsed;
+  return data;
+}
+
+async function callGateway(model, photosList, promptText, maxTokens) {
+  var content = [];
+  for (var i = 0; i < photosList.length; i++) {
+    var p = photosList[i];
+    content.push({ type: "image_url", image_url: { url: "data:" + p.mediaType + ";base64," + p.base64 } });
+  }
+  content.push({ type: "text", text: promptText });
+
+  var body = {
+    model: model,
+    max_tokens: maxTokens || 600,
+    messages: [{ role: "user", content: content }]
+  };
+  var headers = gwAuth();
+  headers["content-type"] = "application/json";
+  headers["x-app"] = "itemid";
+  var res = await fetch(gwBase() + "/v1/chat/completions", {
+    method: "POST",
+    headers: headers,
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) {
+    var text = await res.text();
+    throw new Error("Gateway " + res.status + ": " + text.slice(0, 400));
+  }
+  var json = await res.json();
+  var choice = (json.choices && json.choices[0]) || {};
+  var textOut = ((choice.message && choice.message.content) || "").trim();
+  if (!textOut) throw new Error("Gateway returned an empty response.");
+  return parseJson(textOut);
+}
+
+async function callClaude(apiKey, model, photosList, promptText, maxTokens) {
+  if (!apiKey) throw new Error(aiNotReadyMsg());
   var content = [];
   for (var i = 0; i < photosList.length; i++) {
     var p = photosList[i];
     content.push({ type: "image", source: { type: "base64", media_type: p.mediaType, data: p.base64 } });
   }
-  content.push({ type: "text", text: buildPrompt(hint) });
+  content.push({ type: "text", text: promptText });
 
-  var body = { model: model, max_tokens: 600, messages: [{ role: "user", content: content }] };
+  var body = { model: model, max_tokens: maxTokens || 600, messages: [{ role: "user", content: content }] };
   var res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -2559,9 +3002,35 @@ function populateResult(d) {
   fields.confidence  = String(d.confidence || "").toLowerCase();
   fields.value       = numOrNull(d.estimated_value_usd);
   fields.str         = numOrNull(d.sell_through_pct);
+  renderExpertRow(d);
   renderFields();
   renderEstimatesBar();
   rebuildQuery();
+}
+
+function renderExpertRow(d) {
+  var row = $("expertRow");
+  if (!row) return;
+  var summary = String(d.expert_summary || "").trim();
+  var desir   = String(d.desirability || "").toLowerCase();
+  var lo = numOrNull(d.value_low_usd), hi = numOrNull(d.value_high_usd);
+  if (!summary && !desir && lo == null && hi == null) { hide(row); return; }
+  var html = "";
+  if (desir === "high" || desir === "medium" || desir === "low") {
+    html += '<span class="confidence ' + desir + '">Desirability: ' + desir + '</span> ';
+  }
+  if (lo != null || hi != null) {
+    var range = (lo != null ? "$" + lo : "?") + " – " + (hi != null ? "$" + hi : "?");
+    html += '<span class="confidence medium" style="background:#1f2f4a;color:#aac8ff;">' + range + '</span>';
+  }
+  if (html) html = '<div style="margin-bottom:6px;">' + html + "</div>";
+  if (summary) {
+    var esc = document.createElement("div");
+    esc.textContent = summary;
+    html += esc.innerHTML;
+  }
+  $("rExpert").innerHTML = html || "&mdash;";
+  show(row);
 }
 
 function renderFields() {
@@ -2576,8 +3045,12 @@ function renderFields() {
   if (conf === "high" || conf === "medium" || conf === "low") {
     html += '<span class="confidence ' + conf + '">Confidence: ' + conf + "</span>";
   }
-  if (lastModelUsed && lastModelUsed.indexOf("opus") !== -1) {
-    html += '<span class="model-badge">via Opus</span>';
+  if (lastModelUsed && lastModelUsed !== defaultModel()) {
+    html += '<span class="model-badge">via ' + modelShortName(lastModelUsed) + '</span>';
+  }
+  if (lastGuidesUsedTitles && lastGuidesUsedTitles.length) {
+    html += '<span class="model-badge" style="background:#1f3a2a;color:#9fd8b8;">Expert: ' +
+      lastGuidesUsedTitles.map(function(t) { return String(t); }).join(", ").slice(0, 60) + '</span>';
   }
   $("confidenceRow").innerHTML = html;
 }
@@ -4166,7 +4639,7 @@ function terapeakWorthpointLinksEl(term) {
 /* Comps modal — opens when the user taps "view N" on the Agent row. Item
  * here is whichever record carries the agentResult: a group item snapshot or
  * a history entry. Read-only display, no edits. */
-function openCompsModal(item) {
+async function openCompsModal(item) {
   var r = item && item.agentResult;
   if (!r || !Array.isArray(r.comps) || r.comps.length === 0) return;
   var titleEl = $("compsModalTitle");
@@ -4174,7 +4647,21 @@ function openCompsModal(item) {
   titleEl.textContent = r.comps.length + " comparable listing" + (r.comps.length === 1 ? "" : "s");
   bodyEl.innerHTML = "";
   bodyEl.appendChild(terapeakWorthpointLinksEl(item && (item.query || item.title)));
-  r.comps.forEach(function(c) { bodyEl.appendChild(buildCompCard(c)); });
+  // Thumbs up/down feedback needs the APR job_id these comps came from —
+  // only present on records saved since the feedback-loop feature shipped.
+  var jobId = item && item.agentJobId ? item.agentJobId : null;
+  var labelMap = {};
+  if (jobId && isAgentConfigured()) {
+    try {
+      var url = agentBaseUrl() + "/api/v1/research/" + encodeURIComponent(jobId) + "/comp-labels";
+      var res = await fetch(url, { headers: { "X-API-Key": agentApiKey() } });
+      if (res.ok) {
+        var data = await res.json();
+        (data.labels || []).forEach(function(l) { labelMap[l.comp_url] = l.label; });
+      }
+    } catch (e) { /* best-effort — thumbs just render unlabeled if this fails */ }
+  }
+  r.comps.forEach(function(c) { bodyEl.appendChild(buildCompCard(c, jobId, labelMap[c.url])); });
   show($("compsModalOverlay"));
 }
 
@@ -4416,14 +4903,14 @@ $("streamAutoModeToggle").querySelectorAll("button[data-mode]").forEach(function
 
 $("streamIdentifyBtn").addEventListener("click", async function() {
   if (streamPhotos.length === 0) return;
-  var key = localStorage.getItem(LS_KEY);
-  if (!key) {
-    showError("Set your Anthropic API key in ⚙ first.");
+  if (!aiReady()) {
+    showError(aiNotReadyMsg());
     show($("settings"));
     return;
   }
   var hint = $("streamHintText").value;
-  var model = localStorage.getItem(LS_MODEL) || "claude-sonnet-4-6";
+  var model = defaultModel();
+  var guideIds = activeGuideIds();  // Expert Mode applies in Streamline too
   var photoSnapshot = streamPhotos.map(function(p) {
     // Store JUST what we need to re-render and re-submit: dataUrl + base64 + mediaType.
     return { dataUrl: p.dataUrl, base64: p.base64, mediaType: p.mediaType };
@@ -4436,6 +4923,7 @@ $("streamIdentifyBtn").addEventListener("click", async function() {
     photos:           photoSnapshot,
     hint:             hint,
     model:            model,
+    guideIds:         guideIds,
     identifyResult:   null,
     query:            "",
     value:            null,
@@ -4469,9 +4957,8 @@ $("streamIdentifyBtn").addEventListener("click", async function() {
 async function runCardIdentify(cardId) {
   var card = await cardsGet(cardId);
   if (!card) return;
-  var apiKey = localStorage.getItem(LS_KEY);
   try {
-    var data = await callClaude(apiKey, card.model, card.photos, card.hint);
+    var data = await callAI(card.model, card.photos, card.hint, card.guideIds || []);
     var fresh = await cardsGet(cardId);
     if (!fresh) return;  // user dismissed it mid-flight
     fresh.identifyResult = data;
@@ -4536,6 +5023,7 @@ async function submitCardToAgent(cardId, opts) {
     images:          images,
     condition:       "used",
     max_tier:        5,
+    match_mode:      matchMode(),
     client_id:       "item_id_streamline",
     idempotency_key: "itemid-stream-" + cardId + "-" + (quickLookup ? "q-" : "") + Date.now()
   };
@@ -4783,7 +5271,7 @@ function renderStreamCardAgentRow(card) {
         e.stopPropagation();
         var fresh = await cardsGet(card.id);
         if (!fresh) return;
-        openCompsModal({ agentResult: fresh.agentResult });
+        openCompsModal({ agentResult: fresh.agentResult, agentJobId: fresh.agentJobId });
       });
     });
     return wrap.firstChild;
@@ -4922,7 +5410,7 @@ $("streamSaveGroupPickerCancel").addEventListener("click", function() {
   hide($("streamSaveGroupPicker"));
 });
 
-function buildCompCard(c) {
+function buildCompCard(c, jobId, currentLabel) {
   if (!c) return document.createDocumentFragment();
   var card = document.createElement("div");
   card.className = "comp-card";
@@ -4985,8 +5473,91 @@ function buildCompCard(c) {
     meta.appendChild(why);
   }
 
+  // Thumbs up/down feedback — only possible when we know which APR job this
+  // comp came from (older saved items pre-date jobId capture on comp cards).
+  if (jobId && c.url) {
+    meta.appendChild(buildCompThumbs(c, jobId, currentLabel));
+  }
+
   card.appendChild(meta);
   return card;
+}
+
+function buildCompThumbs(c, jobId, currentLabel) {
+  var wrap = document.createElement("div");
+  wrap.className = "comp-thumbs";
+  wrap.style.cssText = "margin-top:4px";
+
+  function makeBtn(label, emoji, title) {
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "comp-thumb-btn";
+    btn.title = title;
+    btn.textContent = emoji;
+    btn.style.cssText = "border:1px solid #444;background:#222;border-radius:4px;cursor:pointer;" +
+      "font-size:12px;line-height:1;padding:3px 6px;margin-right:4px;opacity:0.4";
+    setThumbBtnActive(btn, label === currentLabel, label);
+    btn.addEventListener("click", async function(e) {
+      e.stopPropagation();
+      var other = label === "good" ? badBtn : goodBtn;
+      var wasActive = btn.dataset.active === "1";
+      if (wasActive) {
+        setThumbBtnActive(btn, false, label);
+        var ok = await deleteCompLabel(jobId, c.url);
+        if (!ok) setThumbBtnActive(btn, true, label);
+      } else {
+        setThumbBtnActive(btn, true, label);
+        setThumbBtnActive(other, false, other === goodBtn ? "good" : "bad");
+        var ok2 = await submitCompLabel(jobId, c, label);
+        if (!ok2) { setThumbBtnActive(btn, false, label); }
+      }
+    });
+    return btn;
+  }
+
+  var goodBtn = makeBtn("good", "\u{1F44D}", "Good comp");
+  var badBtn  = makeBtn("bad",  "\u{1F44E}", "Bad comp");
+  wrap.appendChild(goodBtn);
+  wrap.appendChild(badBtn);
+  return wrap;
+}
+
+function setThumbBtnActive(btn, active, label) {
+  btn.dataset.active = active ? "1" : "0";
+  btn.style.opacity = active ? "1" : "0.4";
+  btn.style.borderColor = active ? (label === "good" ? "#2db84d" : "#e05c5c") : "#444";
+  btn.style.background = active ? (label === "good" ? "#1e3a24" : "#3a1e1e") : "#222";
+}
+
+async function submitCompLabel(jobId, c, label) {
+  if (!isAgentConfigured()) return false;
+  try {
+    var url = agentBaseUrl() + "/api/v1/comp-labels";
+    var res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-API-Key": agentApiKey() },
+      body: JSON.stringify({
+        job_id: jobId,
+        comp_url: c.url,
+        label: label,
+        comp_title: c.title || null,
+        comp_source: c.source || null,
+        match_score: (c.match_score != null && isFinite(c.match_score)) ? c.match_score : null,
+        client_id: "item_id_pwa"
+      })
+    });
+    return res.ok;
+  } catch (e) { return false; }
+}
+
+async function deleteCompLabel(jobId, compUrl) {
+  if (!isAgentConfigured()) return false;
+  try {
+    var qs = new URLSearchParams({ job_id: jobId, comp_url: compUrl });
+    var url = agentBaseUrl() + "/api/v1/comp-labels?" + qs.toString();
+    var res = await fetch(url, { method: "DELETE", headers: { "X-API-Key": agentApiKey() } });
+    return res.ok;
+  } catch (e) { return false; }
 }
 
 function wireAgentChipsForGroupItem(rowEl, groupId, savedAt) {
@@ -5444,7 +6015,7 @@ $("photoLightbox").addEventListener("click", function(e) {
   closePhotoLightbox();
 });
 $("photoLightboxCloseBtn").addEventListener("click", function(e) {
-  e.stopPropagation();
+  e.stopPropagationpagation();
   closePhotoLightbox();
 });
 
