@@ -926,6 +926,97 @@
     display: flex; justify-content: center; margin-top: -4px;
   }
 
+  /* Bulk table-scan mode */
+  .bulk-input {
+    background: #1a1a1a; border: 1px solid #2a2a2a;
+    border-radius: 10px; padding: 12px;
+    margin-bottom: 12px;
+  }
+  .bulk-input textarea { min-height: 48px; }
+  .bulk-model-row { display: flex; align-items: center; gap: 8px; margin: 6px 0 8px; }
+  .bulk-model-row label { margin: 0; flex-shrink: 0; font-size: 0.82em; color: #888; text-transform: uppercase; letter-spacing: 0.04em; }
+  .bulk-model-row select { margin: 0; flex: 1; min-width: 0; }
+  .bulk-scans { display: flex; flex-direction: column; gap: 12px; margin-top: 4px; }
+  .bulk-scan-card {
+    background: #1f1f1f; border: 1px solid #333;
+    border-radius: 10px; padding: 10px 12px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .bulk-scan-card.scanning { border-color: #2a4570; background: #182238; }
+  .bulk-scan-card.failed   { border-color: #5a2f2f; background: #2a1f1f; }
+  .bulk-scan-head { display: flex; gap: 10px; align-items: flex-start; }
+  .bulk-scan-thumb {
+    width: 72px; height: 72px; border-radius: 6px;
+    background: #0f0f0f; object-fit: cover; flex-shrink: 0;
+    cursor: zoom-in;
+  }
+  .bulk-scan-title { font-size: 0.95em; color: #e8e8e8; font-weight: 600; }
+  .bulk-scan-sub { font-size: 0.78em; color: #888; margin-top: 2px; word-break: break-word; }
+  .bulk-pick {
+    background: #171b17; border: 1px solid #2a3a2a;
+    border-radius: 8px; padding: 8px 10px;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .bulk-pick.sent { opacity: 0.55; }
+  .bulk-pick-head { display: flex; gap: 10px; align-items: flex-start; }
+  .bulk-pick-crop {
+    width: 84px; height: 84px; border-radius: 6px;
+    background: #0f0f0f; object-fit: cover; flex-shrink: 0;
+    cursor: zoom-in; border: 1px solid #333;
+  }
+  .bulk-pick-titleblock { flex: 1; min-width: 0; }
+  .bulk-pick-name { font-size: 0.95em; font-weight: 600; color: #e8e8e8; word-break: break-word; }
+  .bulk-pick-details { font-size: 0.8em; color: #aaa; margin-top: 2px; word-break: break-word; }
+  .bulk-badge-row { display: flex; gap: 6px; margin-top: 4px; flex-wrap: wrap; align-items: center; }
+  .bulk-badge {
+    font-size: 0.72em; font-weight: 600; padding: 2px 8px;
+    border-radius: 10px; text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .bulk-badge.pri-high   { background: #5a4218; border: 1px solid #8a6a28; color: #f5d186; }
+  .bulk-badge.pri-medium { background: #2a3a5a; border: 1px solid #4570a0; color: #d0e2ff; }
+  .bulk-badge.pri-low    { background: #2a2a2a; border: 1px solid #444; color: #aaa; }
+  .bulk-badge.conf { background: #1a1a1a; border: 1px solid #333; color: #888; text-transform: none; }
+  .bulk-money-row {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+  }
+  .bulk-money-cell {
+    background: #0f0f0f; border: 1px solid #2a2a2a; border-radius: 6px;
+    padding: 5px 8px; text-align: center;
+  }
+  .bulk-money-cell .label {
+    display: block; font-size: 0.65em; color: #888;
+    text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .bulk-money-cell .val { font-weight: 600; color: #cfe8cf; font-size: 0.95em; }
+  .bulk-money-cell.grab .val { color: #f5d186; }
+  .bulk-pick-rationale { font-size: 0.82em; color: #bbb; }
+  .bulk-pick-lookfor { font-size: 0.8em; color: #aac8ff; }
+  .bulk-pick-lookfor .lf-label { color: #6a86b8; font-weight: 600; }
+  .bulk-pick-actions { display: flex; gap: 8px; align-items: center; }
+  .bulk-eval-btn {
+    flex: 1; padding: 9px 12px; margin: 0;
+    background: #3a2a5a; border: 1px solid #5a3f8a; color: #e8d8ff;
+    font-weight: 600; border-radius: 8px;
+  }
+  .bulk-eval-btn:active { background: #4a3a6a; }
+  .bulk-pick-x, .bulk-scan-x {
+    background: #2a2a2a; border: 1px solid #444; color: #aaa;
+    width: 28px; height: 28px; padding: 0; margin: 0;
+    border-radius: 14px; font-size: 1.1em; line-height: 1;
+    flex-shrink: 0;
+  }
+  .bulk-pick-x:active, .bulk-scan-x:active { background: #3a1f1f; color: #ff8888; }
+  .bulk-loading-row {
+    display: flex; align-items: center; gap: 8px;
+    color: #aac8ff; font-size: 0.9em; padding: 6px 0;
+  }
+  .bulk-fullphoto-link {
+    width: auto; padding: 2px 6px; margin: 0;
+    background: none; border: none;
+    color: #888; text-decoration: underline;
+    font-size: 0.78em; font-family: inherit;
+  }
+
   /* Toast: small confirmation bubble at the bottom of the screen */
   .toast {
     position: fixed;
@@ -962,6 +1053,7 @@
 <header>
   <h1 id="pageTitle">Item ID</h1>
   <div class="nav">
+    <button class="icon-btn" id="bulkBtn" title="Bulk table scan" aria-label="Bulk table scan">&#128301;</button>
     <button class="icon-btn" id="streamlineBtn" title="Streamline mode" aria-label="Streamline mode">&#9889;</button>
     <button class="icon-btn" id="groupsBtn"   title="Groups"   aria-label="Groups">&#128193;</button>
     <button class="icon-btn" id="historyBtn"  title="History"  aria-label="History">&#9776;</button>
@@ -1355,6 +1447,38 @@
   </div>
 </div>
 
+<div id="view-bulk" class="hidden">
+  <div class="bulk-input">
+    <div class="row">
+      <label class="btn" for="bulkCameraInput">&#128247; Photo of Table</label>
+      <label class="btn" for="bulkLibraryInput">&#128444; Choose Photos</label>
+    </div>
+    <input type="file" id="bulkCameraInput" accept="image/*" capture="environment">
+    <input type="file" id="bulkLibraryInput" accept="image/*" multiple>
+    <div id="bulkPhotoGridSection" class="hidden">
+      <div class="photo-count" id="bulkPhotoCount"></div>
+      <div id="bulkPhotoGrid" class="photos"></div>
+    </div>
+    <div class="hint-label-row" style="margin-top:8px;">
+      <label for="bulkHintText" style="margin:0;">Hint (optional)</label>
+    </div>
+    <textarea id="bulkHintText" placeholder="e.g., 'mostly hand tools and glassware, some boxes unopened'" spellcheck="false"></textarea>
+    <div class="bulk-model-row">
+      <label for="bulkModelSelect">Scan model</label>
+      <select id="bulkModelSelect"></select>
+    </div>
+    <button class="primary" id="bulkScanBtn" disabled>&#128301; Scan Table</button>
+    <div class="footnote" style="margin-top:-2px;">
+      Each photo becomes its own scan and runs in the background. Suggested items appear below, ranked &mdash; tap Evaluate to load one into Identify for close-ups. Expert guides selected on the main screen apply here too.
+    </div>
+  </div>
+
+  <div class="bulk-scans" id="bulkScansList"></div>
+  <div id="bulkEmpty" class="footnote" style="text-align:center; padding: 20px 16px;">
+    No scans yet. Photograph a table and tap Scan.
+  </div>
+</div>
+
 <!-- Toast for "Saved to <Group>" confirmation. -->
 <div id="toast" class="toast hidden"></div>
 
@@ -1428,6 +1552,8 @@ var LS_GW_CATALOG = "itemid.gwCatalog";      // cached {aliases, models} from GE
 var LS_GUIDE_LIST   = "itemid.guideList";    // cached [{id,title,bytes,updated}] from GET /guides
 var LS_GUIDE_ACTIVE = "itemid.guideActive";  // ids of guides applied to the next identify
 var GUIDE_BODY_PREFIX = "itemid.guideBody."; // + id -> cached markdown
+var LS_BULK_MODEL   = "itemid.bulkModel";    // model used for Bulk table scans
+var BULK_MAX_PICKS  = 8;                     // ranked cap on suggestions per scan
 var GUIDE_CHAR_BUDGET = 80000;               // max guide chars sent per identify
 var TAXBP_DEFAULT = 10;
 // Active profile's slot count, cached for synchronous access. Set by
@@ -1652,6 +1778,13 @@ function secondOpinionModel() {
   }
   return "claude-opus-4-6";
 }
+// The model used by Bulk table scans. Scene analysis is harder than single-item
+// ID, so this defaults to the strong Second-opinion model until the user picks.
+function bulkModel() {
+  var stored = localStorage.getItem(LS_BULK_MODEL);
+  if (stored) return stored;
+  return secondOpinionModel();
+}
 function modelShortName(id) {
   if (!id) return "";
   var s = String(id);
@@ -1679,17 +1812,23 @@ function populateModelSelects() {
   var cat = getCatalog();
   var gwSel = $("gwModel");
   var soSel = $("secondModelInline");
+  var bulkSel = $("bulkModelSelect");
   gwSel.innerHTML = "";
   soSel.innerHTML = "";
+  bulkSel.innerHTML = "";
   if (!gwConfigured()) {
     // Direct path: second-opinion choices are the legacy Anthropic ids.
     [["claude-opus-4-6", "Opus 4.6"], ["claude-sonnet-4-6", "Sonnet 4.6"], ["claude-haiku-4-5-20251001", "Haiku 4.5"]]
       .forEach(function(p) {
-        var o = document.createElement("option");
-        o.value = p[0]; o.textContent = p[1];
-        soSel.appendChild(o);
+        [soSel, bulkSel].forEach(function(sel) {
+          var o = document.createElement("option");
+          o.value = p[0]; o.textContent = p[1];
+          sel.appendChild(o);
+        });
       });
     soSel.value = "claude-opus-4-6";
+    bulkSel.value = bulkModel();
+    if (!bulkSel.value) bulkSel.value = "claude-opus-4-6";
     var oo = document.createElement("option");
     oo.value = ""; oo.textContent = "(set gateway first)";
     gwSel.appendChild(oo);
@@ -1706,7 +1845,7 @@ function populateModelSelects() {
     sel.appendChild(g);
     return g;
   }
-  [gwSel, soSel].forEach(function(sel) {
+  [gwSel, soSel, bulkSel].forEach(function(sel) {
     if (cat && cat.aliases && Object.keys(cat.aliases).length) {
       var ag = addGroup(sel, "Aliases (routing table)");
       Object.keys(cat.aliases).sort().forEach(function(a) {
@@ -1736,6 +1875,8 @@ function populateModelSelects() {
   if (!gwSel.value) gwSel.selectedIndex = 0;
   soSel.value = secondOpinionModel();
   if (!soSel.value) soSel.selectedIndex = 0;
+  bulkSel.value = bulkModel();
+  if (!bulkSel.value) bulkSel.selectedIndex = 0;
 }
 
 // Pull the model catalog + guide list (and guide bodies) from the gateway.
@@ -3340,11 +3481,12 @@ function showError(msg) {
 }
 
 var DB_NAME = "itemid";
-var DB_VERSION = 4;
+var DB_VERSION = 5;
 var STORE = "items";
 var GROUPS_STORE = "groups";
 var PROFILES_STORE = "profiles";
 var STREAMLINE_STORE = "streamlineCards";
+var BULK_STORE = "bulkScans";
 var DEFAULT_PROFILE_ID = 1;
 
 function openDb() {
@@ -3385,6 +3527,13 @@ function openDb() {
       if (!db.objectStoreNames.contains(STREAMLINE_STORE)) {
         var sc = db.createObjectStore(STREAMLINE_STORE, { keyPath: "id", autoIncrement: true });
         sc.createIndex("createdAt", "createdAt", { unique: false });
+      }
+      // v5: bulk table-scan store — one record per table photo scanned in Bulk
+      // Mode. Each holds the table photo (crop-source resolution) plus the
+      // AI's ranked picks with their generated crops. Survives refreshes.
+      if (!db.objectStoreNames.contains(BULK_STORE)) {
+        var bs = db.createObjectStore(BULK_STORE, { keyPath: "id", autoIncrement: true });
+        bs.createIndex("createdAt", "createdAt", { unique: false });
       }
     };
     req.onsuccess = function() { resolve(req.result); };
@@ -3505,6 +3654,58 @@ async function cardsPut(doc) {
 }
 async function cardsDelete(id) {
   var store = await cardsStore("readwrite");
+  return new Promise(function(res, rej) {
+    var r = store.delete(id);
+    r.onsuccess = function() { res(); };
+    r.onerror   = function() { rej(r.error); };
+  });
+}
+
+/* ============================================================
+ * Bulk table-scan CRUD
+ * ============================================================ */
+
+function scansStore(mode) {
+  return openDb().then(function(db) { return db.transaction(BULK_STORE, mode).objectStore(BULK_STORE); });
+}
+async function scansGetAll() {
+  var store = await scansStore("readonly");
+  return new Promise(function(res, rej) {
+    var r = store.getAll();
+    r.onsuccess = function() {
+      var arr = (r.result || []).slice();
+      arr.sort(function(a, b) { return (b.createdAt || 0) - (a.createdAt || 0); });  // newest first
+      res(arr);
+    };
+    r.onerror = function() { rej(r.error); };
+  });
+}
+async function scansGet(id) {
+  var store = await scansStore("readonly");
+  return new Promise(function(res, rej) {
+    var r = store.get(id);
+    r.onsuccess = function() { res(r.result); };
+    r.onerror   = function() { rej(r.error); };
+  });
+}
+async function scansAdd(doc) {
+  var store = await scansStore("readwrite");
+  return new Promise(function(res, rej) {
+    var r = store.add(doc);
+    r.onsuccess = function() { res(r.result); };
+    r.onerror   = function() { rej(r.error); };
+  });
+}
+async function scansPut(doc) {
+  var store = await scansStore("readwrite");
+  return new Promise(function(res, rej) {
+    var r = store.put(doc);
+    r.onsuccess = function() { res(r.result); };
+    r.onerror   = function() { rej(r.error); };
+  });
+}
+async function scansDelete(id) {
+  var store = await scansStore("readwrite");
   return new Promise(function(res, rej) {
     var r = store.delete(id);
     r.onsuccess = function() { res(); };
@@ -3822,6 +4023,7 @@ function showView(name) {
   hide($("view-profiles"));
   hide($("view-profile-edit"));
   hide($("view-streamline"));
+  hide($("view-bulk"));
   hide($("settings"));
   if (name === "main") {
     show($("view-main"));
@@ -3853,6 +4055,10 @@ function showView(name) {
     show($("view-streamline"));
     $("subtitle").textContent = "Streamline — fast triage";
     renderStreamline();
+  } else if (name === "bulk") {
+    show($("view-bulk"));
+    $("subtitle").textContent = "Bulk scan — table triage";
+    renderBulkScans();
   }
   window.scrollTo({ top: 0, behavior: "auto" });
 }
@@ -3869,6 +4075,11 @@ $("streamlineBtn").addEventListener("click", function() {
   // Toggle: when already in Streamline, go back to main; otherwise enter.
   if (!$("view-streamline").classList.contains("hidden")) showView("main");
   else showView("streamline");
+});
+$("bulkBtn").addEventListener("click", function() {
+  // Toggle: when already in Bulk, go back to main; otherwise enter.
+  if (!$("view-bulk").classList.contains("hidden")) showView("main");
+  else showView("bulk");
 });
 
 async function renderGroupsList() {
@@ -5619,6 +5830,517 @@ function wireAgentChipsForHistoryEntry(rowEl, entryId) {
 }
 
 // Rename: save on blur or Enter
+/* ============================================================
+ * Bulk Mode: table-scan triage.
+ *
+ * Flow: photograph a whole auction table -> each photo becomes a scan
+ * record (persisted in IndexedDB) -> a strong vision model returns up to
+ * BULK_MAX_PICKS ranked picks with bounding boxes -> we crop each pick out
+ * of the high-res table photo client-side -> "Evaluate" loads the crop +
+ * a prefilled hint into the main Identify screen for the usual close-up
+ * pipeline (Identify -> Send to Agent Full/Quick).
+ * ============================================================ */
+
+var bulkPhotos = [];  // input strip: [{dataUrl, base64, mediaType}] at crop-source res
+
+/* Downscale an already-loaded dataUrl (not a File) to maxDim. Used to derive
+ * the model-sized image from the stored crop-source image. */
+function downscaleDataUrl(dataUrl, maxDim, quality) {
+  return new Promise(function(resolve, reject) {
+    var img = new Image();
+    img.onload = function() {
+      var scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+      var w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+      var canvas = document.createElement("canvas");
+      canvas.width = w; canvas.height = h;
+      canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+      var out = canvas.toDataURL("image/jpeg", quality || 0.85);
+      resolve({ dataUrl: out, base64: out.split(",")[1], mediaType: "image/jpeg" });
+    };
+    img.onerror = function() { reject(new Error("Invalid image")); };
+    img.src = dataUrl;
+  });
+}
+
+/* Crop a region out of a dataUrl image. box = [x0, y0, x1, y1] in 0-1000
+ * normalized coordinates. Vision-model boxes are approximate, so we pad each
+ * side generously (12% of the box size, floor 3% of the image) before
+ * clamping to the image bounds. Output is capped at 900px on the long side. */
+function cropFromDataUrl(dataUrl, box) {
+  return new Promise(function(resolve, reject) {
+    var img = new Image();
+    img.onload = function() {
+      var W = img.width, H = img.height;
+      var x0 = Math.min(box[0], box[2]) / 1000 * W;
+      var y0 = Math.min(box[1], box[3]) / 1000 * H;
+      var x1 = Math.max(box[0], box[2]) / 1000 * W;
+      var y1 = Math.max(box[1], box[3]) / 1000 * H;
+      // Degenerate box guard: expand to a centered window.
+      if (x1 - x0 < W * 0.02 || y1 - y0 < H * 0.02) {
+        var cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+        x0 = cx - W * 0.125; x1 = cx + W * 0.125;
+        y0 = cy - H * 0.125; y1 = cy + H * 0.125;
+      }
+      var padX = Math.max((x1 - x0) * 0.12, W * 0.03);
+      var padY = Math.max((y1 - y0) * 0.12, H * 0.03);
+      x0 = Math.max(0, Math.round(x0 - padX));
+      y0 = Math.max(0, Math.round(y0 - padY));
+      x1 = Math.min(W, Math.round(x1 + padX));
+      y1 = Math.min(H, Math.round(y1 + padY));
+      var cw = x1 - x0, ch = y1 - y0;
+      if (cw < 4 || ch < 4) { reject(new Error("Empty crop")); return; }
+      var scale = Math.min(1, 900 / Math.max(cw, ch));
+      var canvas = document.createElement("canvas");
+      canvas.width = Math.round(cw * scale); canvas.height = Math.round(ch * scale);
+      canvas.getContext("2d").drawImage(img, x0, y0, cw, ch, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL("image/jpeg", 0.85));
+    };
+    img.onerror = function() { reject(new Error("Crop source failed to load")); };
+    img.src = dataUrl;
+  });
+}
+
+/* The bulk-scan prompt. Encodes the reverse-auction ("choice") format so the
+ * grab-price advice reflects how the bidding actually works. */
+function buildBulkPrompt(hint, guides) {
+  var block = "";
+  if (guides && guides.length) {
+    for (var i = 0; i < guides.length; i++) {
+      block += "===== EXPERT GUIDE: " + guides[i].title + " =====\n" + guides[i].text + "\n\n";
+    }
+    if (block.length > GUIDE_CHAR_BUDGET) block = block.slice(0, GUIDE_CHAR_BUDGET) + "\n[guide text truncated]\n\n";
+    block = "Use the EXPERT GUIDE(S) below to sharpen identification and pricing where they apply.\n\n" + block;
+  }
+  var pre = (hint && hint.trim())
+    ? "USER CONTEXT (a helpful prior from the user; verify against the photo, do not treat as fact): " + hint.trim() + "\n\n"
+    : "";
+  return pre +
+"You are an expert reseller's spotter at a live auction. The photo shows a large TABLE (or area) covered with assorted items.\n\n" +
+"AUCTION FORMAT (matters for your advice): the auctioneer starts high (around $50) and walks the price DOWN toward $2-$3. At each price, any high bidder may take ANY item(s) from the table for that price, and the walk-down repeats. Obvious high-value items get taken early at higher prices; sleepers survive to the cheap end. The user will walk over and closely inspect only the items you flag.\n\n" +
+block +
+"Scan the ENTIRE photo carefully, including background and partially-hidden items. Pick out up to " + BULK_MAX_PICKS + " items genuinely worth a closer look for eBay resale, ranked best-first by expected upside. Return ONLY a JSON object (no markdown fences, no prose):\n\n" +
+"{\n" +
+"  \"table_summary\": \"<one short sentence describing what is on this table>\",\n" +
+"  \"picks\": [\n" +
+"    {\n" +
+"      \"name\": \"<short label, 2-5 words>\",\n" +
+"      \"details\": \"<what it appears to be: brand/maker/model/era if discernible, else best guess>\",\n" +
+"      \"box\": [x0, y0, x1, y1],\n" +
+"      \"value_low_usd\": <number or null: realistic eBay sold range low>,\n" +
+"      \"value_high_usd\": <number or null: realistic eBay sold range high>,\n" +
+"      \"grab_high_usd\": <number or null: highest walk-down price at which taking this item is still clearly worth it>,\n" +
+"      \"grab_low_usd\": <number or null: price at which it becomes a steal>,\n" +
+"      \"priority\": \"<high | medium | low: how strongly the user should chase this one>\",\n" +
+"      \"confidence\": \"<high | medium | low: confidence in the identification from this distance>\",\n" +
+"      \"rationale\": \"<one sentence: the resale angle and why it beats the rest of the table>\",\n" +
+"      \"look_for\": \"<what to check up close: marks, signatures, model numbers, condition points that swing the value>\"\n" +
+"    }\n" +
+"  ]\n" +
+"}\n\n" +
+"Rules:\n" +
+"- box = the item's bounding box in THIS image as integers 0-1000: x measured from the left edge, y from the top, [left, top, right, bottom]. Keep it tight around the item; it is used to auto-crop the item for the user.\n" +
+"- Base grab prices on resale value net of fees AND on the format above: factor in that desirable items rarely survive to low prices, so a realistic grab_high_usd is where the expected resale still leaves solid profit.\n" +
+"- Only flag items actually visible; never invent. Fewer strong picks beat a padded list; an empty picks array is a valid answer for a junk table.\n" +
+"- Return JSON and nothing else.";
+}
+
+async function callBulkAI(model, sendImage, hint, guideIds) {
+  var ids = guideIds || [];
+  var guides = [];
+  if (ids.length > 0) {
+    try { guides = await ensureGuideBodies(ids); } catch (e) { guides = []; }
+  }
+  var promptText = buildBulkPrompt(hint, guides);
+  var maxTokens = 3000;
+  var photosList = [{ mediaType: sendImage.mediaType, base64: sendImage.base64 }];
+  if (gwConfigured()) return callGateway(model, photosList, promptText, maxTokens);
+  return callClaude(localStorage.getItem(LS_KEY), model, photosList, promptText, maxTokens);
+}
+
+/* --- input strip --- */
+
+async function bulkHandleFiles(fileList) {
+  var files = Array.from(fileList);
+  for (var i = 0; i < files.length; i++) {
+    if (bulkPhotos.length >= 6) { showError("Max 6 table photos per batch."); break; }
+    try {
+      // Crop-source resolution: big enough that a small item cropped out of a
+      // table-wide shot is still recognizable.
+      var p = await downscale(files[i], 2560);
+      bulkPhotos.push(p);
+    } catch (e) { showError("Couldn't read an image: " + e.message); }
+  }
+  $("bulkCameraInput").value = "";
+  $("bulkLibraryInput").value = "";
+  renderBulkPhotos();
+  updateBulkScanButton();
+}
+
+function renderBulkPhotos() {
+  var grid = $("bulkPhotoGrid");
+  grid.innerHTML = "";
+  if (bulkPhotos.length === 0) { hide($("bulkPhotoGridSection")); return; }
+  show($("bulkPhotoGridSection"));
+  $("bulkPhotoCount").textContent = bulkPhotos.length + " table photo" + (bulkPhotos.length === 1 ? "" : "s") + " — each becomes its own scan";
+  bulkPhotos.forEach(function(p, idx) {
+    var cell = document.createElement("div");
+    cell.className = "photo";
+    var img = document.createElement("img");
+    img.src = p.dataUrl; img.alt = "";
+    cell.appendChild(img);
+    var x = document.createElement("button");
+    x.className = "x-btn";
+    x.innerHTML = "&times;";
+    x.setAttribute("aria-label", "Remove photo");
+    x.addEventListener("click", function(e) {
+      e.stopPropagation();
+      bulkPhotos.splice(idx, 1);
+      renderBulkPhotos();
+      updateBulkScanButton();
+    });
+    cell.appendChild(x);
+    grid.appendChild(cell);
+  });
+}
+
+function updateBulkScanButton() {
+  $("bulkScanBtn").disabled = bulkPhotos.length === 0;
+}
+
+/* --- scan lifecycle --- */
+
+async function startBulkScans() {
+  if (bulkPhotos.length === 0) return;
+  if (!aiReady()) {
+    showError(aiNotReadyMsg());
+    show($("settings"));
+    return;
+  }
+  var hint = $("bulkHintText").value;
+  var model = $("bulkModelSelect").value || bulkModel();
+  var guideIds = activeGuideIds();  // Expert Mode applies to bulk scans too
+  var batch = bulkPhotos.slice();
+  bulkPhotos = [];
+  $("bulkHintText").value = "";
+  renderBulkPhotos();
+  updateBulkScanButton();
+  for (var i = 0; i < batch.length; i++) {
+    var thumb = "";
+    try { thumb = await makeThumbnail(batch[i].dataUrl, 160); } catch (e) {}
+    var scan = {
+      createdAt:    Date.now() + i,   // keep batch order stable in the sort
+      status:       "scanning",
+      photoDataUrl: batch[i].dataUrl,
+      thumb:        thumb,
+      hint:         hint,
+      model:        model,
+      guideIds:     guideIds,
+      tableSummary: "",
+      picks:        [],
+      error:        null
+    };
+    var id = await scansAdd(scan);
+    runBulkScan(id).catch(function() { /* scan card surfaces the error */ });
+  }
+  await renderBulkScans();
+}
+
+async function runBulkScan(scanId) {
+  var scan = await scansGet(scanId);
+  if (!scan) return;
+  try {
+    var sendImage = await downscaleDataUrl(scan.photoDataUrl, 1568, 0.85);
+    var data = await callBulkAI(scan.model, sendImage, scan.hint, scan.guideIds || []);
+    var fresh = await scansGet(scanId);
+    if (!fresh) return;  // dismissed mid-flight
+
+    var rawPicks = Array.isArray(data.picks) ? data.picks.slice(0, BULK_MAX_PICKS) : [];
+    var picks = [];
+    for (var i = 0; i < rawPicks.length; i++) {
+      var rp = rawPicks[i] || {};
+      var box = Array.isArray(rp.box) ? rp.box.map(Number) : null;
+      var boxOk = box && box.length === 4 && box.every(isFinite);
+      var pick = {
+        name:       String(rp.name || "Item " + (i + 1)).slice(0, 80),
+        details:    String(rp.details || "").slice(0, 300),
+        box:        boxOk ? box : null,
+        valueLow:   numOrNull(rp.value_low_usd),
+        valueHigh:  numOrNull(rp.value_high_usd),
+        grabHigh:   numOrNull(rp.grab_high_usd),
+        grabLow:    numOrNull(rp.grab_low_usd),
+        priority:   (["high","medium","low"].indexOf(rp.priority) !== -1) ? rp.priority : "medium",
+        confidence: (["high","medium","low"].indexOf(rp.confidence) !== -1) ? rp.confidence : "medium",
+        rationale:  String(rp.rationale || "").slice(0, 500),
+        lookFor:    String(rp.look_for || "").slice(0, 400),
+        cropDataUrl: "",
+        status:     "new"
+      };
+      if (pick.box) {
+        try { pick.cropDataUrl = await cropFromDataUrl(fresh.photoDataUrl, pick.box); }
+        catch (e) { pick.cropDataUrl = ""; }
+      }
+      picks.push(pick);
+    }
+    fresh.tableSummary = String(data.table_summary || "").slice(0, 300);
+    fresh.picks  = picks;
+    fresh.status = "done";
+    fresh.error  = null;
+    await scansPut(fresh);
+  } catch (e) {
+    var failed = await scansGet(scanId);
+    if (!failed) return;
+    failed.status = "failed";
+    failed.error  = (e && e.message) || String(e);
+    await scansPut(failed);
+  }
+  await renderBulkScans();
+}
+
+async function dismissScan(scanId) {
+  await scansDelete(scanId);
+  await renderBulkScans();
+}
+
+async function dismissPick(scanId, pickIdx) {
+  var scan = await scansGet(scanId);
+  if (!scan || !scan.picks || !scan.picks[pickIdx]) return;
+  scan.picks.splice(pickIdx, 1);
+  await scansPut(scan);
+  await renderBulkScans();
+}
+
+async function retryScan(scanId) {
+  var scan = await scansGet(scanId);
+  if (!scan) return;
+  scan.status = "scanning";
+  scan.error  = null;
+  await scansPut(scan);
+  await renderBulkScans();
+  runBulkScan(scanId).catch(function() {});
+}
+
+/* Hand a pick off to the main Identify screen: crop preloaded as photo #1,
+ * hint prefilled from the pick, ready for close-up photos + Identify. */
+async function evaluatePick(scanId, pickIdx) {
+  var scan = await scansGet(scanId);
+  if (!scan || !scan.picks || !scan.picks[pickIdx]) return;
+  var pick = scan.picks[pickIdx];
+  var src = pick.cropDataUrl || scan.photoDataUrl;
+
+  // Reset the main view exactly like starting a fresh item.
+  currentJobId = null;
+  pendingAgent = null;
+  resetSendToAgentButton();
+  fields = defaultFields();
+  fields.taxBpPct = getStickyTaxBpPct();
+  photos = [{ dataUrl: src, base64: src.split(",")[1], mediaType: "image/jpeg" }];
+  var hintParts = [pick.name];
+  if (pick.details) hintParts.push(pick.details);
+  if (pick.lookFor) hintParts.push("check: " + pick.lookFor);
+  $("hintText").value = hintParts.join(" — ").slice(0, 400);
+  hide($("result"));
+  hide($("error"));
+  renderPhotos();
+  updateIdentifyButton();
+  renderJobQueue();
+
+  pick.status = "sent";
+  await scansPut(scan);
+  showView("main");
+  showToast("Crop loaded — add close-up photos, then Identify.");
+}
+
+/* --- rendering --- */
+
+function fmtRange(lo, hi, sep) {
+  if (lo == null && hi == null) return "—";
+  if (lo == null) return "$" + Math.round(hi);
+  if (hi == null) return "$" + Math.round(lo);
+  return "$" + Math.round(lo) + (sep || "–$") + Math.round(hi);
+}
+
+async function renderBulkScans() {
+  var list = $("bulkScansList");
+  var scans = [];
+  try { scans = await scansGetAll(); } catch (e) { return; }
+  list.innerHTML = "";
+  if (scans.length === 0) { show($("bulkEmpty")); return; }
+  hide($("bulkEmpty"));
+  scans.forEach(function(scan) { list.appendChild(buildBulkScanEl(scan)); });
+}
+
+function buildBulkScanEl(scan) {
+  var card = document.createElement("div");
+  card.className = "bulk-scan-card" + (scan.status === "scanning" ? " scanning" : (scan.status === "failed" ? " failed" : ""));
+
+  var head = document.createElement("div");
+  head.className = "bulk-scan-head";
+  var thumb = document.createElement("img");
+  thumb.className = "bulk-scan-thumb";
+  thumb.src = scan.thumb || scan.photoDataUrl;
+  thumb.alt = "";
+  thumb.addEventListener("click", function() { openPhotoLightbox(scan.photoDataUrl); });
+  head.appendChild(thumb);
+
+  var tb = document.createElement("div");
+  tb.style.flex = "1"; tb.style.minWidth = "0";
+  var title = document.createElement("div");
+  title.className = "bulk-scan-title";
+  var t = new Date(scan.createdAt || Date.now());
+  var pad2 = function(v) { return String(v).padStart(2, "0"); };
+  title.textContent = "Table scan " + pad2(t.getHours()) + ":" + pad2(t.getMinutes()) +
+    (scan.status === "done" ? " — " + scan.picks.length + " pick" + (scan.picks.length === 1 ? "" : "s") : "");
+  tb.appendChild(title);
+  var sub = document.createElement("div");
+  sub.className = "bulk-scan-sub";
+  sub.textContent = (scan.tableSummary || "") + (scan.model ? ((scan.tableSummary ? " · " : "") + modelShortName(scan.model)) : "");
+  tb.appendChild(sub);
+  head.appendChild(tb);
+
+  var x = document.createElement("button");
+  x.className = "bulk-scan-x";
+  x.innerHTML = "&times;";
+  x.setAttribute("aria-label", "Dismiss scan");
+  x.addEventListener("click", function() { dismissScan(scan.id); });
+  head.appendChild(x);
+  card.appendChild(head);
+
+  if (scan.status === "scanning") {
+    var lr = document.createElement("div");
+    lr.className = "bulk-loading-row";
+    lr.innerHTML = '<span class="spinner"></span>Scanning table&hellip;';
+    card.appendChild(lr);
+    return card;
+  }
+  if (scan.status === "failed") {
+    var er = document.createElement("div");
+    er.className = "bulk-scan-sub";
+    er.style.color = "#ff9f9f";
+    er.textContent = scan.error || "Scan failed.";
+    card.appendChild(er);
+    var rb = document.createElement("button");
+    rb.textContent = "Retry scan";
+    rb.addEventListener("click", function() { retryScan(scan.id); });
+    card.appendChild(rb);
+    return card;
+  }
+
+  if (!scan.picks || scan.picks.length === 0) {
+    var np = document.createElement("div");
+    np.className = "bulk-scan-sub";
+    np.textContent = "No standout items spotted on this table.";
+    card.appendChild(np);
+    return card;
+  }
+
+  scan.picks.forEach(function(pick, idx) {
+    card.appendChild(buildBulkPickEl(scan, pick, idx));
+  });
+  return card;
+}
+
+function buildBulkPickEl(scan, pick, idx) {
+  var el = document.createElement("div");
+  el.className = "bulk-pick" + (pick.status === "sent" ? " sent" : "");
+
+  var head = document.createElement("div");
+  head.className = "bulk-pick-head";
+  var crop = document.createElement("img");
+  crop.className = "bulk-pick-crop";
+  crop.src = pick.cropDataUrl || scan.thumb || scan.photoDataUrl;
+  crop.alt = "";
+  crop.addEventListener("click", function() { openPhotoLightbox(pick.cropDataUrl || scan.photoDataUrl); });
+  head.appendChild(crop);
+
+  var tb = document.createElement("div");
+  tb.className = "bulk-pick-titleblock";
+  var name = document.createElement("div");
+  name.className = "bulk-pick-name";
+  name.textContent = (idx + 1) + ". " + pick.name + (pick.status === "sent" ? " ✓" : "");
+  tb.appendChild(name);
+  if (pick.details) {
+    var det = document.createElement("div");
+    det.className = "bulk-pick-details";
+    det.textContent = pick.details;
+    tb.appendChild(det);
+  }
+  var badges = document.createElement("div");
+  badges.className = "bulk-badge-row";
+  var pb = document.createElement("span");
+  pb.className = "bulk-badge pri-" + pick.priority;
+  pb.textContent = pick.priority;
+  badges.appendChild(pb);
+  var cb = document.createElement("span");
+  cb.className = "bulk-badge conf";
+  cb.textContent = "ID conf: " + pick.confidence;
+  badges.appendChild(cb);
+  var fl = document.createElement("button");
+  fl.className = "bulk-fullphoto-link";
+  fl.textContent = "full photo";
+  fl.addEventListener("click", function() { openPhotoLightbox(scan.photoDataUrl); });
+  badges.appendChild(fl);
+  tb.appendChild(badges);
+  head.appendChild(tb);
+
+  var x = document.createElement("button");
+  x.className = "bulk-pick-x";
+  x.innerHTML = "&times;";
+  x.setAttribute("aria-label", "Dismiss pick");
+  x.addEventListener("click", function() { dismissPick(scan.id, idx); });
+  head.appendChild(x);
+  el.appendChild(head);
+
+  var money = document.createElement("div");
+  money.className = "bulk-money-row";
+  var vc = document.createElement("div");
+  vc.className = "bulk-money-cell";
+  vc.innerHTML = '<span class="label">Est. resale</span><span class="val">' + escapeHtml(fmtRange(pick.valueLow, pick.valueHigh)) + '</span>';
+  money.appendChild(vc);
+  var gc = document.createElement("div");
+  gc.className = "bulk-money-cell grab";
+  gc.innerHTML = '<span class="label">Grab at</span><span class="val">' +
+    escapeHtml(pick.grabHigh != null ? ("$" + Math.round(pick.grabHigh) + " or less") : fmtRange(pick.grabLow, pick.grabHigh)) + '</span>';
+  money.appendChild(gc);
+  el.appendChild(money);
+
+  if (pick.rationale) {
+    var ra = document.createElement("div");
+    ra.className = "bulk-pick-rationale";
+    ra.textContent = pick.rationale;
+    el.appendChild(ra);
+  }
+  if (pick.lookFor) {
+    var lf = document.createElement("div");
+    lf.className = "bulk-pick-lookfor";
+    var lab = document.createElement("span");
+    lab.className = "lf-label";
+    lab.textContent = "Up close: ";
+    lf.appendChild(lab);
+    lf.appendChild(document.createTextNode(pick.lookFor));
+    el.appendChild(lf);
+  }
+
+  var actions = document.createElement("div");
+  actions.className = "bulk-pick-actions";
+  var ev = document.createElement("button");
+  ev.className = "bulk-eval-btn";
+  ev.innerHTML = "&#128269; Evaluate this item";
+  ev.addEventListener("click", function() { evaluatePick(scan.id, idx); });
+  actions.appendChild(ev);
+  el.appendChild(actions);
+
+  return el;
+}
+
+/* --- wiring --- */
+
+$("bulkCameraInput").addEventListener("change", function(e) { bulkHandleFiles(e.target.files); });
+$("bulkLibraryInput").addEventListener("change", function(e) { bulkHandleFiles(e.target.files); });
+$("bulkScanBtn").addEventListener("click", function() { startBulkScans(); });
+$("bulkModelSelect").addEventListener("change", function() {
+  if (this.value) localStorage.setItem(LS_BULK_MODEL, this.value);
+});
+
 function commitGroupRename() {
   if (currentGroupId == null) return;
   var input = $("groupNameInput");
